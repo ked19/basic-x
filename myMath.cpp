@@ -343,6 +343,10 @@ DATA MyMath::RGB2Gray(const DATA aRgb[]) const
 {
 	return 0.3F*aRgb[0] + 0.59F*aRgb[1] + 0.11F*aRgb[2];
 }
+DATA MyMath::RGB2Gray2(const DATA aRgb[]) const
+{
+	return 0.27F*aRgb[0] + 0.67F*aRgb[1] + 0.06F*aRgb[2];
+}
 
 //*************************************************************************************************
 

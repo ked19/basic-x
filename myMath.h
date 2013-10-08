@@ -55,6 +55,7 @@ public:
 	void RGB2HSV(DATA aHsv[], const DATA aRgb[], bool bNormH) const;
 	void HSV2RGB(DATA aRgb[], const DATA aHsv[], bool bNormH) const;
 	DATA RGB2Gray(const DATA aRgb[]) const;
+	DATA RGB2Gray2(const DATA aRgb[]) const;
 
 	DATA Interpolate_linear(DATA &a, DATA &b, DATA ratioA) const;
 	DATA Interpolate_linear(DATA &lb, DATA &rb, DATA &lt, DATA &rt, DATA &ratioL, DATA &ratioB) const;
