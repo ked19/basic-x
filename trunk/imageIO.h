@@ -4,7 +4,7 @@
 #include "layer.h"
 //#include "matrixOperation.h"
 
-#include <FreeImage.h>
+#include "FreeImage.h"
 #include <iostream>
 #include <string>
 #include <cassert>

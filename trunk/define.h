@@ -58,14 +58,11 @@ template <class T>
 class Vect4D
 {
 public:
-	Vect4D(T x, T y, T z, T c);
+	Vect4D(T r, T g, T b, T a);
 	Vect4D(const Vect4D<T> &vFrom);
 	~Vect4D();
 
-	union {T m_x;	T m_r;};
-	union {T m_y;	T m_g;};
-	union {T m_z;	T m_b;};
-	union {T m_c;	T m_a;};
+	T m_r;		T m_g;		T  m_b;		T m_a;	
 
 private:
 };
@@ -104,12 +101,12 @@ template<class T>
 Vect3D<T>::~Vect3D() {}
 
 template<class T>
-Vect4D<T>::Vect4D(T x, T y, T z, T c)
-	:m_x(x), m_y(y), m_z(z), m_c(c) {}
+Vect4D<T>::Vect4D(T r, T g, T b, T a)
+	:m_r(r), m_g(g), m_b(b), m_a(a) {}
 
 template<class T>
 Vect4D<T>::Vect4D(const Vect4D<T> &vFrom)
-	:m_x(vFrom.m_x), m_y(vFrom.m_y), m_z(vFrom.m_z), m_c(vFrom.m_c) {}
+	:m_r(vFrom.m_r), m_g(vFrom.m_g), m_b(vFrom.m_b), m_a(vFrom.m_a) {}
 
 template<class T>
 Vect4D<T>::~Vect4D() {}
