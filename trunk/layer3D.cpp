@@ -222,3 +222,50 @@ Layer* CplxLyr2D::GetImgLyr() const
 	Layer *pLyr = m_pLyr3->GetLyr(1);
 	return pLyr;
 }
+
+//*************************************************************************************************
+//
+//*************************************************************************************************
+
+VectorData::VectorData(Layer3D &l3dData, Vect3D<DATA> step)
+	:m_l3dData(l3dData), m_vStep(step)
+{}
+
+VectorData::VectorData(Vect3D<unsigned> dim, Vect3D<DATA> step)
+	:m_l3dData(dim.m_x, dim.m_y, dim.m_z, 3), m_vStep(step)
+{}
+
+VectorData::~VectorData()
+{}
+
+Vect3D<unsigned> VectorData::GetDim() const
+{
+	Vect4D<unsigned> dim = m_l3dData.GetDim();
+	Vect3D<unsigned> dimOut(dim.m_r, dim.m_g, dim.m_b);
+	return dimOut;
+}
+
+Vect3D<DATA> VectorData::GetStep() const
+{
+	return m_vStep;
+}
+
+DATA& VectorData::CellRef(unsigned x, unsigned y, unsigned z, unsigned c)
+{
+	return m_l3dData.CellRef(x, y, z, c);
+}
+
+DATA VectorData::CellVal(unsigned x, unsigned y, unsigned z, unsigned c) const
+{
+	return m_l3dData.CellVal(x, y, z, c);
+}
+
+Layer3D& VectorData::GetL3dRef()
+{
+	return m_l3dData;
+}
+
+const Layer3D& VectorData::GetL3dVal() const
+{
+	return m_l3dData;
+}

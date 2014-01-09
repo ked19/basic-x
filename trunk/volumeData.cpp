@@ -194,11 +194,23 @@ void VolumeFile::LoadIntensity()
 
 	GetFType();
 	if(m_fType.compare("raw") == 0 ||
-	   m_fType.compare("p") == 0)
+	   m_fType.compare("p") == 0 ||
+	   m_fType.compare("lyr") == 0)
 	{
 		fSlice.open(m_fTplate.c_str(), ios::binary);
 	}
 	else {}
+
+	if(m_fType.compare("lyr") == 0)
+	{
+		unsigned aDim[3];
+		fSlice.read((char*)aDim, sizeof(unsigned)*3);
+		//cout << aDim[0] << " " << aDim[1] << " " << aDim[2] << endl;
+		//getchar();
+		//cout << sizeof(DATA) << endl;
+	}
+	else {}
+
 	for(unsigned z=1; z<=m_vDim.m_z; z++)
 	{
 		if(m_fType.compare("stanford") == 0)
@@ -245,6 +257,20 @@ void VolumeFile::LoadIntensity()
 						fSlice.read((char*)&a, m_unitSize);
 
 						assert(m_fType.compare("raw") == 0);
+						lyrInt.CellRef(x, y, z-1) = (DATA)a;
+					}
+					else {}
+				}
+				else if(m_format.compare("float") == 0)
+				{
+					if(m_unitSize == 8)
+					{	
+						double a;
+						assert(sizeof(double) == m_unitSize);
+						fSlice.read((char*)&a, sizeof(double));
+						//cout << a << " ";
+
+						assert(m_fType.compare("lyr") == 0);
 						lyrInt.CellRef(x, y, z-1) = (DATA)a;
 					}
 					else {}
