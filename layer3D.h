@@ -81,4 +81,27 @@ private:
 
 typedef CplxLyr2D CplxLyr;
 
+//*************************************************************************************************
+
+class VectorData
+{
+public:
+	VectorData(Layer3D &l3dData, Vect3D<DATA> step);
+	VectorData(Vect3D<unsigned> dim, Vect3D<DATA> step);
+	~VectorData();
+
+	Vect3D<unsigned> GetDim() const;
+	Vect3D<DATA> GetStep() const;
+
+	DATA& CellRef(unsigned x, unsigned y, unsigned z, unsigned c);
+	DATA  CellVal(unsigned x, unsigned y, unsigned z, unsigned c) const;
+
+	Layer3D& GetL3dRef();
+	const Layer3D& GetL3dVal() const;
+
+private:
+	Vect3D<DATA> m_vStep;
+	Layer3D m_l3dData;
+};
+
 #endif

@@ -8,8 +8,34 @@
 #include "layer3D.h"
 //#include "volumeData.h"
 
+#include <fstream>
 #include <fftw3.h>
 #include <cmath>
+#include <cassert>
+#include <sstream>
+
+using namespace std;
+
+class SaveLyr
+{
+public:
+	SaveLyr();
+	~SaveLyr();
+
+	void Gen(const Layer &lyr, string f, bool bB=true) const;
+};
+class SaveImgLyr
+{
+public:
+	SaveImgLyr();
+	~SaveImgLyr();
+
+	void Gen(const Layer & lyr, string f, string ext) const;
+
+//private:
+//	stringstream ss;
+//	string sN;
+};
 
 class ZeroLyr
 {
@@ -23,6 +49,24 @@ private:
 	Zero m_zero;
 };
 
+class OneLyr
+{
+public:
+	OneLyr();
+	~OneLyr();
+
+	void Gen(Layer &lyr) const;	
+};
+
+class RndLyr
+{
+public:
+	RndLyr();
+	~RndLyr();
+
+	void Gen(Layer &lyr) const;
+};
+
 class Gauss3DLyr
 {
 public:
@@ -31,6 +75,15 @@ public:
 
 	void Gen(Layer &lyr, DATA s, bool bNormal=true) const;
 	void Gen(VolumeData &vol, DATA s, bool bNormal=true) const;
+};
+
+class Norm3DLyr
+{
+public:
+	Norm3DLyr();
+	~Norm3DLyr();
+
+	DATA Gen(Layer &lyr, bool bNor=false) const;	
 };
 
 //*************************************************************************************************
@@ -173,6 +226,15 @@ public:
 	void Gen(Layer &lyr, DATA v);
 };
 
+class AddLyr
+{
+public:
+	AddLyr();
+	~AddLyr();
+
+	void Gen(Layer &lyr, DATA v);
+};
+
 class CellMultiplyLyr
 {
 public:
@@ -296,8 +358,13 @@ private:
 class G_LayerOp
 {
 public:
+	SaveLyr				save;
+	SaveImgLyr  		saveImg;		 		
 	HessianLyr			Hess;
 	ZeroLyr				zero;
+	OneLyr				one;
+	RndLyr 				rnd;
+	Norm3DLyr 			norm;
 	Gauss3DLyr			Gauss3D;
 	CellMultiplyLyr		cellX;
 	DerivateLyr			der;
@@ -309,13 +376,13 @@ public:
 	HisLyr				his;
 	MulLyr				mul;
 	SubLyr				sub;
+	AddLyr 				add;
 	AvgLyr				avg;
 	VarLyr				var;
 	RngLyr				rng;
 	ConvLyr				conv;
 	DoGLyr				DoG;
 	SplattingLyr		splt;
-
 
 private:
 };

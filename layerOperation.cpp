@@ -4,6 +4,74 @@ G_LayerOp lyrOp;
 
 //*************************************************************************************************
 
+SaveLyr::SaveLyr()
+{}
+
+SaveLyr::~SaveLyr()
+{}
+
+void SaveLyr::Gen(const Layer &lyr, string f, bool bB) const
+{
+	if(bB)
+	{
+		ofstream outF(f.c_str(), ios::binary);
+
+		Vect3D<unsigned> dim = lyr.GetDim();
+		outF.write((char*)&dim.m_x, sizeof(unsigned));
+		outF.write((char*)&dim.m_y, sizeof(unsigned));
+		outF.write((char*)&dim.m_z, sizeof(unsigned));
+
+		for(unsigned z=0; z<dim.m_z; z++)
+		{
+			for(unsigned y=0; y<dim.m_y; y++)
+			{
+				for(unsigned x=0; x<dim.m_x; x++)
+				{
+					DATA v = lyr.CellVal(x, y, z);
+					/*
+					cout << v << " ";
+					if(x==dim.m_x-1 && y==dim.m_y-1 && z==dim.m_z-1)
+					{
+						cout << endl;
+					}
+					else {}
+					*/
+
+					outF.write((char*)&v, sizeof(DATA));
+				}
+			}
+		}
+
+		outF.close();
+	}
+	else
+	{
+		MyAssert(0);
+	}
+}
+
+SaveImgLyr::SaveImgLyr()
+{}
+
+SaveImgLyr::~SaveImgLyr()
+{}
+
+void SaveImgLyr::Gen(const Layer & lyr, string f, string ext) const
+{
+	stringstream ss;
+	string sN;
+	Vect3D<unsigned> dim = lyr.GetDim();
+    for (unsigned i = 0; i < dim.m_z; i++) {
+        ss.clear();
+        ss << setfill('0') << setw(4) << i;
+        ss >> sN;
+        string sF = f + "_" + sN + ".bmp";
+        imgIO.Write(sF, MyImg(*lyr.GetMtx(i)));
+    } // i
+}
+
+//*************************************************************************************************
+
 ZeroLyr::ZeroLyr()
 {}
 
@@ -17,6 +85,45 @@ void ZeroLyr::Gen(Layer &lyr) const
 	{
 		Mtx *pMtx = lyr.GetMtx(c);
 		m_zero.Gen(*pMtx);
+	}
+}
+
+OneLyr::OneLyr()
+{}
+
+OneLyr::~OneLyr()
+{}
+
+void OneLyr::Gen(Layer &lyr) const
+{
+	Vect3D<unsigned> dim = lyr.GetDim();
+	for(unsigned c=0; c<dim.m_z; c++)
+	{
+		Mtx *pMtx = lyr.GetMtx(c);
+		mtxOp.one.Gen(*pMtx);
+	}
+}
+
+RndLyr::RndLyr()
+{}
+
+RndLyr::~RndLyr()
+{}
+
+void RndLyr::Gen(Layer &lyr) const
+{
+	srand((unsigned)time(0));
+
+	Vect3D<unsigned> dim = lyr.GetDim();
+	for(unsigned z=0; z<dim.m_z; z++)
+	{
+		for(unsigned y=0; y<dim.m_y; y++)
+		{
+			for(unsigned x=0; x<dim.m_x; x++)
+			{
+				lyr.CellRef(x, y, z) = (DATA)rand() / RAND_MAX;
+			}
+		}
 	}
 }
 
@@ -107,6 +214,47 @@ void Gauss3DLyr::Gen(VolumeData &vol, DATA s, bool bNormal) const
 		}
 	}
 	else {}
+}
+
+Norm3DLyr::Norm3DLyr()
+{}
+
+Norm3DLyr::~Norm3DLyr()
+{}
+
+DATA Norm3DLyr::Gen(Layer &lyr, bool bNor) const
+{
+	Vect3D<unsigned> dim = lyr.GetDim();
+
+	DATA len = 0;
+	for(unsigned z=0; z<dim.m_z; z++)
+	{
+		for(unsigned y=0; y<dim.m_y; y++)
+		{
+			for(unsigned x=0; x<dim.m_x; x++)
+			{
+				len += lyr.CellVal(x, y, z) * lyr.CellVal(x, y, z);
+			}
+		}
+	}
+	len = sqrt(len);
+
+	if(bNor)
+	{
+		if(myMath.IsEqual(len, 0))
+		{
+			return len;
+		}
+		else
+		{
+			lyrOp.mul.Gen(lyr, 1.F/len);
+			return len;
+		}
+	}
+	else 
+	{
+		return len;
+	}
 }
 
 //*************************************************************************************************
@@ -291,9 +439,12 @@ void Orient::Gen(Layer &lyrOrnt, const Mtx &mtx)
 
 			lyrOrnt.CellRef(x, y, 0) = sqrt(dx*dx + dy*dy);
 			lyrOrnt.CellRef(x, y, 1) = atan2(dy, dx);
+
 		}
 	}
 }
+
+
 
 //*************************************************************************************************
 //
@@ -826,6 +977,28 @@ void SubLyr::Gen(Layer &lyr, DATA v)
 			for(unsigned x=0; x<dim.m_x; x++)
 			{
 				lyr.CellRef(x, y, z) = lyr.CellVal(x, y, z) - v;
+			}
+		}
+	}
+}
+
+AddLyr::AddLyr()
+{}
+
+AddLyr::~AddLyr()
+{}
+
+void AddLyr::Gen(Layer &lyr, DATA v)
+{
+	Vect3D<unsigned> dim = lyr.GetDim();
+
+	for(unsigned z=0; z<dim.m_z; z++)
+	{
+		for(unsigned y=0; y<dim.m_y; y++)
+		{
+			for(unsigned x=0; x<dim.m_x; x++)
+			{
+				lyr.CellRef(x, y, z) = lyr.CellVal(x, y, z) + v;
 			}
 		}
 	}

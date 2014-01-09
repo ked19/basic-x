@@ -35,6 +35,12 @@ public:
 	Vect2D(T x, T y);
 	Vect2D(const Vect2D<T> &vFrom);
 	~Vect2D();
+	Vect2D<T>& operator=(const Vect2D<T> &v)
+	{
+		m_x = v.m_x;
+		m_y = v.m_y;
+		return *this;
+	}
 
 	T  m_x;		T  m_y;
 
@@ -48,6 +54,13 @@ public:
 	Vect3D(T x, T y, T z);
 	Vect3D(const Vect3D<T> &vFrom);
 	~Vect3D();
+	Vect3D<T>& operator=(const Vect3D<T> &v)
+	{
+		m_x = v.m_x;
+		m_y = v.m_y;
+		m_z = v.m_z;
+		return *this;
+	}
 
 	T m_x;		T m_y;		T  m_z;
 
@@ -61,8 +74,18 @@ public:
 	Vect4D(T r, T g, T b, T a);
 	Vect4D(const Vect4D<T> &vFrom);
 	~Vect4D();
+	Vect4D<T>& operator=(const Vect4D<T> &v)
+	{
+		m_r = v.m_r;
+		m_g = v.m_g;
+		m_b = v.m_b;
+		m_a = v.m_a;
+	}
 
-	T m_r;		T m_g;		T  m_b;		T m_a;	
+	union{T m_r;	T m_x;};
+	union{T m_g;	T m_y;};	
+	union{T m_b;	T m_z;};		
+	union{T m_a;	T m_c;};	
 
 private:
 };
@@ -138,5 +161,10 @@ void Mult(Vect3D<T> &in, DATA scl)
 }
 
 //*************************************************************************************************
+
+void _MyAssert_(bool st, unsigned ln, string fn);
+#define MyAssert(st) (_MyAssert_((st), __LINE__, __FILE__))
+
+void PrintCount(unsigned c, unsigned lim);
 
 #endif
