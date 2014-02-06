@@ -406,14 +406,14 @@ bool MyMath::IsLess(const DATA &a, const DATA &b, const DATA &delta) const
     }
 }
 
-DATA MyMath::Interpolate_linear(DATA &a, DATA &b, DATA ratioA) const
+DATA MyMath::Interpolate_linear(DATA a, DATA b, DATA ratioA) const
 {
     DATA ratioB = 1.F - ratioA;
     DATA r = a * ratioB + b * ratioA;
     return r;
 }
 
-DATA MyMath::Interpolate_linear(DATA &lb, DATA &rb, DATA &lt, DATA &rt, DATA &ratioL, DATA &ratioB) const
+DATA MyMath::Interpolate_linear(DATA lb, DATA rb, DATA lt, DATA rt, DATA ratioL, DATA ratioB) const
 {
     DATA b = Interpolate_linear(lb, rb, ratioL);
     DATA t = Interpolate_linear(lt, rt, ratioL);
@@ -422,7 +422,7 @@ DATA MyMath::Interpolate_linear(DATA &lb, DATA &rb, DATA &lt, DATA &rt, DATA &ra
     return val;
 }
 
-DATA MyMath::Interpolate_linear(DATA &lbn, DATA &rbn, DATA &ltn, DATA &rtn, DATA &lbf, DATA &rbf, DATA &ltf, DATA &rtf, DATA &ratioL, DATA &ratioB, DATA &ratioN) const
+DATA MyMath::Interpolate_linear(DATA lbn, DATA rbn, DATA ltn, DATA rtn, DATA lbf, DATA rbf, DATA ltf, DATA rtf, DATA ratioL, DATA ratioB, DATA ratioN) const
 {
     DATA n = Interpolate_linear(lbn, rbn, ltn, rtn, ratioL, ratioB);
     DATA f = Interpolate_linear(lbf, rbf, ltf, rtf, ratioL, ratioB);
