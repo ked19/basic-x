@@ -51,10 +51,11 @@ template <class T>
 class Vect3D
 {
 public:
-	Vect3D(T x, T y, T z);
-	Vect3D(const Vect3D<T> &vFrom);
-	~Vect3D();
-	Vect3D<T>& operator=(const Vect3D<T> &v)
+	Vect3D(T x, T y, T z); //restrict(cpu, amp);
+	Vect3D(const Vect3D<T> &vFrom); //restrict(cpu, amp);
+	Vect3D(); //restrict(cpu, amp);
+	~Vect3D(); //restrict(cpu, amp);
+	Vect3D<T>& operator=(const Vect3D<T> &v) //restrict(cpu, amp)
 	{
 		m_x = v.m_x;
 		m_y = v.m_y;
@@ -113,15 +114,20 @@ template<class T>
 Vect2D<T>::~Vect2D() {}
 
 template<class T>
-Vect3D<T>::Vect3D(T x, T y, T z)
+Vect3D<T>::Vect3D(T x, T y, T z) //restrict(cpu, amp)
 	:m_x(x), m_y(y), m_z(z) {}
 
 template<class T>
-Vect3D<T>::Vect3D(const Vect3D<T> &vFrom)
+Vect3D<T>::Vect3D(const Vect3D<T> &vFrom) //restrict(cpu, amp)
 	:m_x(vFrom.m_x), m_y(vFrom.m_y), m_z(vFrom.m_z) {}
 
 template<class T>
-Vect3D<T>::~Vect3D() {}
+Vect3D<T>::Vect3D() //restrict(cpu, amp)
+	:m_x(0), m_y(0), m_z(0) {}
+
+template<class T>
+Vect3D<T>::~Vect3D() //restrict(cpu, amp)
+{}
 
 template<class T>
 Vect4D<T>::Vect4D(T r, T g, T b, T a)

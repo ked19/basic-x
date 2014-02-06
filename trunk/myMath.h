@@ -59,9 +59,9 @@ public:
     DATA RGB2Gray(const DATA aRgb[]) const;
     DATA RGB2Gray2(const DATA aRgb[]) const;
 
-    DATA Interpolate_linear(DATA &a, DATA &b, DATA ratioA) const;
-    DATA Interpolate_linear(DATA &lb, DATA &rb, DATA &lt, DATA &rt, DATA &ratioL, DATA &ratioB) const;
-    DATA Interpolate_linear(DATA &lbn, DATA &rbn, DATA &ltn, DATA &rtn, DATA &lbf, DATA &rbf, DATA &ltf, DATA &rtf, DATA &ratioL, DATA &ratioB, DATA &ratioN) const;
+    DATA Interpolate_linear(DATA a, DATA b, DATA ratioA) const;
+    DATA Interpolate_linear(DATA lb, DATA rb, DATA lt, DATA rt, DATA ratioL, DATA ratioB) const;
+    DATA Interpolate_linear(DATA lbn, DATA rbn, DATA ltn, DATA rtn, DATA lbf, DATA rbf, DATA ltf, DATA rtf, DATA ratioL, DATA ratioB, DATA ratioN) const;
 
     bool IntersectLinePlane3D(DATA aPInt[], const DATA aOri[], const DATA aV[], const DATA aPlane[], DATA tMin, DATA tMax) const;
     bool IntersectLinePlane3D(DATA aPInt[], const DATA aPA[], const DATA aPB[], const DATA aPlane[]) const;
