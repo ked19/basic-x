@@ -255,6 +255,20 @@ void CellMultiply::Gen(Mtx &mtxTo, const Mtx &mtxA, const Mtx &mtxB)
 	}
 }
 
+void CellMultiply::Gen(Mtx &mtxTo, const Mtx &mtxB)
+{
+	Vect2D<unsigned> dimTo = mtxTo.GetDim();
+	Vect2D<unsigned> dimB  = mtxB.GetDim();
+	MyAssert(dimTo.m_x == dimB.m_x && 
+			 dimTo.m_y == dimB.m_y);
+
+	for(unsigned y = 0; y < dimTo.m_y; y++) {
+		for(unsigned x = 0; x < dimTo.m_x; x++) {
+			mtxTo.CellRef(x, y) *= mtxB.CellVal(x, y);
+		}
+	}
+}
+
 //*************************************************************************************************
 //
 //*************************************************************************************************
@@ -911,6 +925,28 @@ void Rng::Gen(DATA &vMin, DATA &vMax, const Mtx &m) const
 	}
 }
 
+ScaleVal::ScaleVal()
+{}
+
+ScaleVal::~ScaleVal()
+{}
+
+void ScaleVal::Gen(Mtx &m, DATA min, DATA max) const
+{
+	DATA mMin = 1e10;
+	DATA mMax = -1e10;
+	mtxOp.rng.Gen(mMin, mMax, m);
+	MyAssert(mMax > mMin);
+
+	DATA scl = (max - min) / (mMax - mMin);
+	Vect2D<unsigned> dim = m.GetDim();
+	for (unsigned y = 0; y < dim.m_y; y++) {
+		for (unsigned x = 0; x < dim.m_x; x++) {
+			m.CellRef(x, y) = (m.CellVal(x, y) - mMin) * scl + min;
+		}
+	}
+}
+
 //*************************************************************************************************
 //
 //*************************************************************************************************
@@ -1101,11 +1137,10 @@ void Sub::Gen(Mtx &mtxBase, const Mtx &suber) const
 {
 	Vect2D<unsigned> dim = mtxBase.GetDim();
 
-	for(unsigned y=0; y<dim.m_y; y++)
-	{
-		for(unsigned x=0; x<dim.m_x; x++)
-		{
-			mtxBase.CellRef(x, y) -= suber.CellVal(x, y);
+	for(unsigned y = 0; y < dim.m_y; y++) {
+		for(unsigned x = 0; x < dim.m_x; x++) {
+			mtxBase.CellRef(x, y) = 
+				mtxBase.CellVal(x, y) - suber.CellVal(x, y);
 		}
 	}
 }
@@ -1135,20 +1170,19 @@ void Mul::Gen(Mtx &mtxR, const Mtx &mtxA, const Mtx &mtxB) const
 	Vect2D<unsigned> dimR = mtxR.GetDim();
 	Vect2D<unsigned> dimA = mtxA.GetDim();
 	Vect2D<unsigned> dimB = mtxB.GetDim();
-	assert(dimR.m_x==dimB.m_x && dimR.m_y==dimA.m_y && dimA.m_x==dimB.m_y);
+	MyAssert(dimR.m_x == dimB.m_x && 
+			 dimR.m_y == dimA.m_y && 
+			 dimA.m_x == dimB.m_y);
 
-	for(unsigned y=0; y<dimR.m_y; y++)
-	{
-		for(unsigned x=0; x<dimR.m_x; x++)
-		{
+	for (unsigned y = 0; y < dimR.m_y; y++) {
+		for (unsigned x = 0; x < dimR.m_x; x++) {
 			DATA r = 0;
-			for(unsigned c=0; c<dimA.m_x; c++)
-			{
+			for (unsigned c = 0; c < dimA.m_x; c++) {
 				r += mtxA.CellVal(c, y) * mtxB.CellVal(x, c);
-			}
+			} // c
 			mtxR.CellRef(x, y) = r;
-		}
-	}
+		} // x
+	} // y
 }
 
 void Mul::Gen(Mtx &mtx, DATA scl) const
@@ -1161,6 +1195,44 @@ void Mul::Gen(Mtx &mtx, DATA scl) const
 			mtx.CellRef(x, y) *= scl;
 		}
 	}
+}
+
+void Mul::GenTA(Mtx &mtxR, const Mtx &mtxA) const
+{
+	Vect2D<unsigned> dimA = mtxA.GetDim();
+	Vect2D<unsigned> dimR = mtxR.GetDim();
+	MyAssert(dimR.m_x == dimR.m_y);
+	MyAssert(dimR.m_y == dimA.m_x);
+
+	for (unsigned y = 0; y < dimR.m_y; y++) {
+		for (unsigned x = 0; x < dimR.m_x; x++) {
+			DATA r = 0;
+			for (unsigned c = 0; c < dimA.m_y; c++) {
+				r += mtxA.CellVal(y, c) * mtxA.CellVal(x, c);
+			} // c
+			mtxR.CellRef(x, y) = r;
+		} // x
+	} // y
+}
+
+void Mul::GenTA(Mtx &mtxR, const Mtx &mtxA, const Mtx &mtxB) const
+{
+	Vect2D<unsigned> dimR = mtxR.GetDim();
+	Vect2D<unsigned> dimA = mtxA.GetDim();
+	Vect2D<unsigned> dimB = mtxB.GetDim();
+	MyAssert(dimR.m_x == dimB.m_x && 
+			 dimR.m_y == dimA.m_x && 
+			 dimA.m_y == dimB.m_y);
+
+	for(unsigned y = 0; y < dimR.m_y; y++) {
+		for(unsigned x = 0; x < dimR.m_x; x++) {
+			DATA r = 0;
+			for(unsigned c = 0; c < dimA.m_y; c++) {
+				r += mtxA.CellVal(y, c) * mtxB.CellVal(x, c);
+			} // c
+			mtxR.CellRef(x, y) = r;
+		} // x
+	} // y
 }
 
 void Mul::Test()
@@ -1500,91 +1572,85 @@ void HisEqual::Reval(Mtx &mtx, Mtx *pMSkip)
 	unsigned sNum = m_pCount[m_levelNum-1];
 
 	unsigned cMin = 0;
-	for(unsigned i=0; i<m_levelNum; i++)
-	{
-		if(m_pCount[i] > 0)
-		{
+	for(unsigned i=0; i<m_levelNum; i++) {
+		if(m_pCount[i] > 0) {
 			cMin = m_pCount[i];
 			break;
-		}
-		else {}
+		} else {}
 	}
 
 	unsigned mtxSize = sNum; 
-	DATA invDiv = 1.F / (mtxSize - cMin);
+	DATA d_count = mtxSize - cMin;
 	Vect2D<unsigned> dim = mtx.GetDim();
-	for(unsigned y=0; y<dim.m_y; y++)
-	{
-		for(unsigned x=0; x<dim.m_x; x++)
-		{
-			if(pMSkip && pMSkip->CellVal(x, y)==0)
-			{
+	for(unsigned y=0; y<dim.m_y; y++) {
+		for(unsigned x=0; x<dim.m_x; x++) {
+			if(pMSkip && pMSkip->CellVal(x, y) == 0) {
 				continue;
-			}
-			else {}
+			} else {}
 
 			DATA val = mtx.CellVal(x, y);
 			unsigned level = (unsigned)(val * (m_levelNum-1));
 
-			if(m_pCount[level] == 0)
-			{
+			if(m_pCount[level] == 0) {
 				mtx.CellRef(x, y) = 0;
-			}
-			else 
-			{
-				mtx.CellRef(x, y) = (m_pCount[level] - cMin) * invDiv;
+			} else {
+				mtx.CellRef(x, y) = (m_pCount[level] - cMin) / d_count * (m_levelNum - 1);
 			}
 		}
 	}
 }
 
-void HisEqual::Gen(Mtx &mtx, unsigned levelNum, bool bReval, Mtx *pMSkip)
+void HisEqual::Gen(Mtx &mtx, unsigned levelNum, Mtx *pMSkip)
 {
-	if(levelNum != m_levelNum)
-	{
-		if(m_memSize < levelNum)
-		{
+	if(levelNum != m_levelNum) {
+		if(m_memSize < levelNum) {
 			delete []m_pCount;
 			m_memSize = levelNum;
 			m_pCount = new unsigned[m_memSize];
-		}
-		else {}
+		} else {}
 		m_levelNum = levelNum;
-	}
-	else {}
-
-	for(unsigned i=0; i<m_levelNum; i++)
-	{
+	} else {}
+	for(unsigned i = 0; i < m_levelNum; i++) {
 		m_pCount[i] = 0;
 	}
+
 	Vect2D<unsigned> dim = mtx.GetDim();
-	for(unsigned y=0; y<dim.m_y; y++)
-	{
-		for(unsigned x=0; x<dim.m_x; x++)
-		{
-			if(pMSkip && pMSkip->CellVal(x, y)==0)
-			{
+
+	DATA min = 1e10;
+	DATA max = -1e10;
+	mtxOp.rng.Gen(min, max, mtx);
+	MyAssert(max > min);
+	DATA d_m = max - min;
+	for (unsigned y = 0; y < dim.m_y; y++) {
+		for (unsigned x = 0; x < dim.m_x; x++) {
+			mtx.CellRef(x, y) = (mtx.CellVal(x, y) - min) / d_m;
+		} // x
+	} // y
+
+	for(unsigned y = 0; y < dim.m_y; y++) {
+		for(unsigned x = 0; x < dim.m_x; x++) {
+			if(pMSkip && pMSkip->CellVal(x, y) == 0) {
 				continue;
-			}
-			else {}
+			} else {}
 
 			unsigned level = (unsigned)(mtx.CellVal(x, y) * (m_levelNum-1));
 			m_pCount[level]++; 
 		}
 	}
 
-	unsigned sNum = m_pCount[0];
-	for(unsigned i=1; i<m_levelNum; i++)
-	{
-		sNum += m_pCount[i];
+	for(unsigned i = 1; i < m_levelNum; i++) {
 		m_pCount[i] += m_pCount[i-1];
 	}
 
-	if(bReval)
-	{
-		Reval(mtx , pMSkip);
+	/*
+	for (unsigned i = 0; i < m_levelNum; i++) {
+		cout << i << ":" << m_pCount[i] << " ";
+		PrintLine(i, 5);
 	}
-	else {}
+	cout << endl;
+	*/
+
+	Reval(mtx , pMSkip);
 }
 
 //*************************************************************************************************
@@ -1640,29 +1706,50 @@ DATA Distance::Gen(Mtx &mtxA, Mtx &mtxB, METHOD m)
 //
 //*************************************************************************************************
 
-Thrd::Thrd()
+BinThrd::BinThrd()
 {}
 
-Thrd::~Thrd()
+BinThrd::~BinThrd()
 {}
 
-void Thrd::Gen(Mtx &mtx, DATA thrd)
+void BinThrd::Gen(Mtx &mtx, DATA thrd, bool bRmLow)
 {
 	Vect2D<unsigned> dim = mtx.GetDim();
-	for(unsigned y=0; y<dim.m_y; y++)
-	{
-		for(unsigned x=0; x<dim.m_x; x++)
-		{
-			if(mtx.CellVal(x, y) >= thrd)
-			{
-				mtx.CellRef(x, y) = 1.F;
-			}
-			else
-			{
-				mtx.CellRef(x, y) = 0;
-			}
-		}
-	}
+	for(unsigned y = 0; y < dim.m_y; y++) {
+		for(unsigned x = 0; x < dim.m_x; x++) {
+			if (bRmLow) {				
+				mtx.CellRef(x, y) = (mtx.CellVal(x, y) < thrd) ?
+					0 : 1.F;
+			} else {
+				mtx.CellRef(x, y) = (mtx.CellVal(x, y) > thrd) ?
+					0 : 1.F;
+			} // bRmLow
+		} // x
+	} // y
+}
+
+Clamp::Clamp()
+{}
+
+Clamp::~Clamp()
+{}
+
+void Clamp::Gen(Mtx &mtx, DATA thrd, bool bRmLow, DATA repV)
+{
+	Vect2D<unsigned> dim = mtx.GetDim();
+	for(unsigned y = 0; y < dim.m_y; y++) {
+		for(unsigned x = 0; x < dim.m_x; x++) {
+			if (bRmLow) {				
+				if (mtx.CellVal(x, y) < thrd) {
+					mtx.CellRef(x, y) = repV;
+				} else {}
+			} else {
+				if (mtx.CellVal(x, y) > thrd) {
+					mtx.CellRef(x, y) = repV;
+				} else {}
+			} // bRmLow
+		} // x
+	} // y
 }
 
 //*************************************************************************************************
@@ -1675,6 +1762,8 @@ Otsu::~Otsu()
 
 DATA Otsu::Gen(Mtx &mtx, DATA &thrd, unsigned lev, DATA valMax, DATA valMin)
 {
+	MyAssert(0);
+	/*
 	Vect2D<unsigned> dimIn = mtx.GetDim();
 	//unsigned size = dimIn.m_x * dimIn.m_y;
 	unsigned size = 0;
@@ -1767,10 +1856,11 @@ DATA Otsu::Gen(Mtx &mtx, DATA &thrd, unsigned lev, DATA valMax, DATA valMin)
 	unsigned iLoc = (unsigned)((DATA)sumI / num + 0.5F);
 	thrd = mtxHVal.CellVal(0, iLoc);
 
-	mtxOp.thrd.Gen(mtx, thrd);
+	mtxOp.thrd.Gen(mtx, thrd, true);
 
 	DATA conf = mtxDelta.CellVal(0, iLoc) / dg;
 	return conf;
+	*/
 }
 
 //*************************************************************************************************
@@ -1872,8 +1962,64 @@ void Erose::Gen(Mtx &mtxOut, Mtx &mtxIn, unsigned len)
 			if(bAll)
 			{
 				mtxOut.CellRef(x, y) = 1.F;
+				//cout << x << "," << y << "  ";
 			}
 			else {}
+		} // x
+	} // y
+}
+
+MorphGray::MorphGray()
+{}
+
+MorphGray::~MorphGray()
+{}
+
+void MorphGray::Gen(Mtx &mtxOut, Mtx &mtxIn, Mtx mtxKerl, bool bDilate) 
+{
+	Vect2D<unsigned> dimOut  = mtxOut.GetDim();
+	Vect2D<unsigned> dimIn   = mtxIn.GetDim();
+	Vect2D<unsigned> dimKerl = mtxKerl.GetDim();
+	MyAssert(dimOut.m_x == dimIn.m_x &&
+			 dimOut.m_y == dimIn.m_y);
+
+	for (unsigned y = 0; y < dimIn.m_y; y++) {
+		int yB = (int)y - dimKerl.m_y / 2;
+		for (unsigned x = 0; x < dimIn.m_x; x++) {
+			int xL = (int)x - dimKerl.m_x / 2;
+
+			DATA maxV = -1e10;
+			DATA minV = 1e10;
+			for (unsigned yy = 0; yy < dimKerl.m_y; yy++) {
+				int yLoc = yB + yy;
+				if (!mtxIn.IsYInside(yLoc)) {
+					continue;
+				} else {}
+
+				for (unsigned xx = 0; xx < dimKerl.m_x; xx++) {
+					int xLoc = xL + xx;
+					if (!mtxIn.IsXInside(xLoc)) {
+						continue;
+					} else {}
+
+					if (mtxKerl.CellVal(xx, yy) != 0) {
+						DATA v = mtxIn.CellVal((unsigned)xLoc, (unsigned)yLoc);
+						if (v > maxV) {
+							maxV = v;
+						} else if (v < minV) {
+							minV = v;
+						} else {}
+					} else {}
+				} // xx
+			} // yy
+
+			if (maxV < 0) {
+				maxV = 0;
+			} else {}
+			if (minV < 0) {
+				minV = 0;
+			} else {}
+			mtxOut.CellRef(x, y) = (bDilate) ? maxV : minV;
 		} // x
 	} // y
 }
@@ -1954,6 +2100,427 @@ DATA CrossCorr::Gen(const Mtx &mtxIn, Mtx &mtxMsk, unsigned xOff, unsigned yOff)
 	}
 	val /= devIn*devMsk;
 	return val;
+}
+
+//*************************************************************************************************
+//
+//*************************************************************************************************
+
+Solv_GElim::Solv_GElim()
+{}
+
+Solv_GElim::~Solv_GElim()
+{}
+
+// AX = B
+int Solv_GElim::Gen(Mtx &mtxX, Mtx &mtxA, Mtx &mtxB, unsigned aIdxR[], bool bDebug)
+{
+	Vect2D<unsigned> dimA = mtxA.GetDim();
+	Vect2D<unsigned> dimB = mtxB.GetDim();
+	Vect2D<unsigned> dimX = mtxX.GetDim();
+	MyAssert(dimA.m_x == dimA.m_y);
+	MyAssert(dimB.m_x == 1 && dimX.m_x == 1);
+	MyAssert(dimB.m_y == dimX.m_y);
+	MyAssert(dimA.m_x == dimX.m_y);
+
+	//unsigned lenIdx = sizeof(aIdxR) / sizeof(unsigned);
+	//cout << lenIdx << endl;
+	//MyAssert(dimX.m_y <= lenIdx);
+
+	if (bDebug) {
+		cout << "debug of Solv_GLime" << endl;
+	} else {}
+
+	for (unsigned i = 0; i < dimA.m_y; i++) {
+		aIdxR[i] = i;
+	}
+
+	for (unsigned r = 0; r <= dimA.m_y - 2; r++) {
+		//***************************************
+		// exchange rows
+		//***************************************
+		DATA maxV = mtxA.CellVal(r, aIdxR[r]);
+		unsigned maxIdxR = r;
+		for (unsigned rr = r + 1; rr <= dimA.m_y - 1; rr++) {
+			DATA v = mtxA.CellVal(r, aIdxR[rr]);
+			if (v > maxV) {
+				maxV = v;
+				maxIdxR = rr;
+			} else {}
+		} // rr
+
+		if (maxIdxR != r) {
+			unsigned rTmp = aIdxR[maxIdxR];
+			aIdxR[maxIdxR] = aIdxR[r];
+			aIdxR[r] = rTmp;
+		} else {}
+		if (bDebug) {
+			cout << "aIdxR: " << endl;
+			for (unsigned rr = 0; rr < dimA.m_y; rr++ ) {
+				cout << aIdxR[rr] << " ";
+			}	
+			cout << endl;
+		} else {}
+
+		DATA pivVal = mtxA.CellVal(r, aIdxR[r]);
+		if (myMath.IsEqual(pivVal, 0)) {
+			return -1;
+		} else {}
+		//MyAssert(!myMath.IsEqual(pivVal, 0));
+
+		//***************************************
+		// elimination
+		//***************************************
+		for (unsigned rElim = r + 1; rElim <= dimA.m_y - 1; rElim++) {
+			DATA ratio = mtxA.CellVal(r, aIdxR[rElim]) / pivVal; 
+
+			for (unsigned col = r; col <= dimA.m_x - 1; col++) {
+				mtxA.CellRef(col, aIdxR[rElim]) = 
+					mtxA.CellVal(col, aIdxR[rElim]) - mtxA.CellVal(col, aIdxR[r]) * ratio;
+			} // c
+
+			mtxB.CellRef(0, aIdxR[rElim]) = 
+				mtxB.CellVal(0, aIdxR[rElim]) - mtxB.CellVal(0, aIdxR[r]) * ratio;
+		} // rr		
+	} // r
+	if (bDebug) {
+		cout << "mtxA: " << endl;
+		mtxOp.out << mtxA;
+
+		cout << "mtxB: " << endl;
+		mtxOp.out << mtxB;
+	} else {}
+
+	//*******************************************
+	// reverse
+	//*******************************************
+	for (int r = dimA.m_y - 1; r >= 0; r--) {
+		/*
+		if (myMath.IsEqual(mtxA.CellVal(r, aIdxR[r]), 0)) {
+			return -1;
+		} else {}
+
+		mtxX.CellRef(0, aIdxR[r]) = mtxB.CellVal(0, aIdxR[r]) / mtxA.CellVal(r, aIdxR[r]);
+		*/
+		if (!myMath.IsEqual(mtxA.CellVal(r, aIdxR[r]), 0, 1e-6)) {
+			mtxX.CellRef(0, aIdxR[r]) = mtxB.CellVal(0, aIdxR[r]) / mtxA.CellVal(r, aIdxR[r]);
+		} else {
+			mtxX.CellRef(0, aIdxR[r]) = 1.F;
+		}
+
+		for (int rr = 0; rr <= r - 1; rr++) {
+			mtxB.CellRef(0, aIdxR[rr]) -= mtxX.CellVal(0, aIdxR[r]) * mtxA.CellVal(r, aIdxR[rr]);
+		} // rr
+	} // r 
+	if (bDebug) {
+		cout << "result: " << endl;
+		mtxOp.out << mtxX;
+	} else {}
+	return 0;
+}
+
+QR_symmetric::QR_symmetric()
+{}
+
+QR_symmetric::~QR_symmetric()
+{}
+
+DATA RunDot(Mtx const &mA, Mtx const &mB)
+{
+	Vect2D<unsigned> dimA = mA.GetDim();
+	Vect2D<unsigned> dimB = mB.GetDim();
+	MyAssert(dimA.m_x == 1 && dimB.m_x == 1);
+	MyAssert(dimA.m_y == dimB.m_y);
+
+	DATA r = 0;
+	for (unsigned y = 0; y < dimA.m_y; y++) {
+		r += mA.CellVal(0, y) * mB.CellVal(0, y);
+	}
+	return r;
+}
+
+DATA RunNorm(Mtx &mA)
+{
+	Vect2D<unsigned> dimA = mA.GetDim();
+	MyAssert(dimA.m_x == 1);
+
+	DATA r = 0;
+	for (unsigned y = 0; y < dimA.m_y; y++) {
+		r += mA.CellVal(0, y) * mA.CellVal(0, y);
+	}
+	if (myMath.IsEqual(r, 0)) {
+		return 0;
+	} else {
+		r = sqrt(r);
+	}
+
+	for (unsigned y = 0; y < dimA.m_y; y++) {
+		mA.CellRef(0, y) /= r;
+	}
+	return r;
+}
+
+// Gram-Schmidt algorithm
+int QR_symmetric::Gen(Mtx &mtxQ, Mtx &mtxR, Mtx const &mtxIn, bool bDebug)
+{
+	Vect2D<unsigned> dimIn = mtxIn.GetDim();
+	Vect2D<unsigned> dimQ = mtxQ.GetDim();
+	Vect2D<unsigned> dimR = mtxR.GetDim();
+	MyAssert(dimQ.m_x == dimIn.m_x && dimQ.m_y == dimIn.m_y);
+	MyAssert(dimR.m_x == dimIn.m_x && dimR.m_y == dimIn.m_y);
+
+	DATA err = 1e-4;
+	MyAssert(dimIn.m_x == dimIn.m_y);
+	for (unsigned y = 0; y < dimIn.m_y; y++) {
+		for (unsigned x = 0; x < dimIn.m_x; x++) {
+			DATA fabIn = fabs(mtxIn.CellVal(x, y));
+			if (fabIn > 1.F) {
+				err *= fabIn;
+			} else {}
+
+			bool bZ = myMath.IsEqual(mtxIn.CellVal(x, y), mtxIn.CellVal(y, x),err);
+			if (!bZ) {
+				cout << mtxIn.CellVal(x, y) << " " << mtxIn.CellVal(y, x) << endl;
+				MyAssert(0);
+			} else {}
+		} // x
+	} // y
+
+	if (bDebug) {
+		cout << "qr" << endl;
+	} else {}
+
+	// compute Q
+	for (unsigned x = 0; x < dimIn.m_x; x++) {
+		// subtract mapping
+		for (unsigned y = 0; y < dimIn.m_y; y++) {
+			mtxQ.CellRef(x, y) = mtxIn.CellVal(x, y);
+		}
+		for (int xx = (int)x - 1; xx >= 0; xx--) {
+			DATA dot = RunDot(Mtx(mtxIn, x,  0, 1, dimIn.m_y), 
+							  Mtx(mtxQ,  xx, 0, 1, dimIn.m_y));
+
+			for (unsigned y = 0; y < dimIn.m_y; y++) {
+				mtxQ.CellRef(x, y) -= dot * mtxQ.CellVal(xx, y);
+			}
+		} // xx
+
+		// normalize
+		DATA len = RunNorm(Mtx(mtxQ, x, 0, 1, dimIn.m_y));
+		if (myMath.IsEqual(len, 0)) {
+			return -1;
+		} else {}
+	} // x
+
+	// compute R
+	mtxOp.zero.Gen(mtxR);
+	for (unsigned x = 0; x < dimIn.m_x; x++) {
+		for (unsigned y = 0; y <=x; y++) {
+				mtxR.CellRef(x, y) = RunDot(Mtx(mtxIn, x, 0, 1, dimIn.m_y),
+											Mtx(mtxQ,  y, 0, 1, dimIn.m_y));
+		} // y
+	} // x
+
+	if (bDebug) {
+		cout << "qr end" << endl;
+	} else {}
+	return 0;
+}
+
+Eigen_symmetric::Eigen_symmetric()
+{}
+
+Eigen_symmetric::~Eigen_symmetric()
+{}
+
+int Eigen_symmetric::Gen(Mtx &mtxEVal, Mtx &mtxQ, Mtx &mtxR, Mtx &mtxTmp, unsigned maxLoop, bool bDebug) 
+{
+	Vect2D<unsigned> dimEVal = mtxEVal.GetDim();
+
+	//*******************************************
+	// eigenvalues
+	//*******************************************
+	DATA zErr = 1e-4;
+	mtxTmp.CopyFrom(mtxEVal);
+	for (unsigned i = 0; i < maxLoop; i++) {
+		int bErr = mtxOp.qr_sym.Gen(mtxQ, mtxR, mtxEVal, false);
+		if (bErr != 0) {
+			return bErr;
+		} else {}
+
+		mtxOp.mul.GenTA(mtxEVal, mtxQ, mtxTmp);
+		mtxOp.mul.Gen(mtxTmp, mtxEVal, mtxQ);
+		mtxEVal.CopyFrom(mtxTmp);
+		if (bDebug) {
+			cout << "mtxQ:" << endl;
+			mtxOp.out << mtxQ;
+			cout << "mtxR:" << endl;
+			mtxOp.out << mtxR;
+			cout << "mtxTmp:" << endl;
+			mtxOp.out << mtxTmp;
+		} else {}
+
+		bool bUp = true;
+		for (unsigned x = 0; x < dimEVal.m_x; x++) {
+			for (unsigned y = x + 1; y < dimEVal.m_y ; y++) {
+				if (!myMath.IsEqual(mtxEVal.CellVal(x, y), 0, zErr)) {
+					bUp = false;
+					//cout << bUp << " ";
+					break;
+				} else {}
+			} // y
+			if (!bUp) {
+				break;
+			} else {}
+		} // x
+
+		if (bUp) {
+			break;
+		} else {
+			//mtxTmp.CopyFrom(mtxEVal);
+		}
+	} // i
+	return 0;
+}
+
+LeastSquare::LeastSquare()
+{}
+
+LeastSquare::~LeastSquare()
+{}
+
+int LeastSquare::Gen(Mtx &mtxX, Mtx &mtxA, Mtx &mtxB, Mtx &mtxAA, Mtx &mtxAB, unsigned aIdx[], bool bDebug)
+{
+	Vect2D<unsigned> dimA = mtxA.GetDim();
+	Vect2D<unsigned> dimB = mtxB.GetDim();
+	Vect2D<unsigned> dimX = mtxX.GetDim();
+	//MyAssert(dimA.m_x == dimA.m_y);
+	MyAssert(dimB.m_x == 1 && dimX.m_x == 1);
+	MyAssert(dimB.m_y == dimA.m_y);
+	MyAssert(dimX.m_y == dimA.m_x);
+
+	Vect2D<unsigned> dimAA = mtxAA.GetDim();
+	Vect2D<unsigned> dimAB = mtxAB.GetDim();
+	MyAssert(dimAA.m_x == dimAA.m_y);
+	MyAssert(dimAA.m_y == dimA.m_x);
+	MyAssert(dimAB.m_x == 1 && dimAB.m_y == dimA.m_x);
+
+	if (bDebug) {
+		cout << "debug of LeastSquare" << endl;
+		cout << "mtxA:" << endl;
+		mtxOp.out << mtxA;
+		cout << "mtxB:" << endl;
+		mtxOp.out << mtxB;
+	} else {}
+
+	mtxOp.mul.GenTA(mtxAA, mtxA);
+	if (bDebug) {
+		cout << "mtxAA:" << endl;
+		mtxOp.out << mtxAA;
+	} else {}
+
+	mtxOp.mul.GenTA(mtxAB, mtxA, mtxB);
+	if (bDebug) {
+		cout << "mtxAB:" << endl;
+		mtxOp.out << mtxAB;
+	} else {}
+
+	int errNo = mtxOp.solv_GElim.Gen(mtxX, mtxAA, mtxAB, aIdx);
+
+	if (bDebug) {
+		if (errNo != 0) {
+			cout << "result:" << endl;
+			mtxOp.out << mtxX;
+		} else {
+			cout << "no result" << endl;
+		}
+	} else {}
+	return errNo;
+}
+
+RegionLabel::RegionLabel()
+{}
+
+RegionLabel::~RegionLabel()
+{}
+
+DATA VCell(Mtx &mtx, int x, int y) {
+	if (!mtx.IsInside(x, y)) {
+		return 0;
+	} else {}
+
+	return mtx.CellVal(x, y);
+}
+unsigned FindRoot(vector<unsigned> arr, unsigned i)
+{
+	unsigned idx = i;
+	unsigned v = arr[idx];
+	while (v != idx) {
+		idx = v;
+		v = arr[idx];
+	}
+	return idx;
+}
+void RegionLabel::Gen(Mtx &mtxLab, Mtx &mtxIn, vector<unsigned> &idx)
+{
+	Vect2D<unsigned> dimIn  = mtxIn.GetDim();
+	Vect2D<unsigned> dimLab = mtxLab.GetDim();
+	MyAssert(dimIn.m_x == dimLab.m_x &&
+		  	 dimIn.m_y == dimLab.m_y);
+
+	//*******************************************
+	// first pass
+	//*******************************************
+	idx.clear();
+	idx.push_back(0);
+	mtxOp.zero.Gen(mtxLab);
+	unsigned maxNo = 0;
+	for (unsigned y = 0; y < dimIn.m_y; y++) {
+		for (unsigned x = 0; x < dimIn.m_x; x++) {
+			if (mtxIn.CellVal(x, y) == 0) {
+				continue;
+			} else {}
+
+			int aL[] = {(int)x - 1, y};
+			int aT[] = {x, (int)y - 1};
+			DATA vL = VCell(mtxLab, aL[0], aL[1]);
+			DATA vT = VCell(mtxLab, aT[0], aT[1]);
+			if (vL == 0 && vT == 0) {
+				maxNo++;
+				mtxLab.CellRef(x, y) = maxNo;
+				idx.push_back(maxNo);
+			} else if (vL == 0) {
+				mtxLab.CellRef(x, y) = (unsigned)vT;
+			} else if (vT == 0) {
+				mtxLab.CellRef(x, y) = (unsigned)vL;
+			} else {				
+				unsigned vMin = (vT < vL) ? (unsigned)vT : (unsigned)vL;
+				unsigned vMax = (vT > vL) ? (unsigned)vT : (unsigned)vL;
+
+				mtxLab.CellRef(x, y) = vMin;
+				if (vMin != vMax) {
+					idx[vMax] = vMin;
+				} else {}
+			}
+			MyAssert(idx.size() == maxNo + 1);
+		} // x
+	} // y
+
+	//*******************************************
+	// second pass
+	//*******************************************
+	for (unsigned y = 0; y < dimIn.m_y; y++) {
+		for (unsigned x = 0; x < dimIn.m_x; x++) {
+			unsigned i = (unsigned)mtxLab.CellVal(x, y);
+			i = FindRoot(idx, i);
+			mtxLab.CellRef(x, y) = i;
+		}
+	}
+
+	for (unsigned i = 0; i < idx.size(); i++) {
+		cout << i << ":" << idx[i] << " ";
+	}
+	cout << endl;
 }
 
 //*************************************************************************************************

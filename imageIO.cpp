@@ -14,7 +14,7 @@ ImgIO::~ImgIO()
 
 FIBITMAP* ImgIO::Load2Bmp(const string &fName) const
 {
-	FREE_IMAGE_FORMAT aFormat[] = {FIF_BMP, FIF_JPEG, FIF_PPM, FIF_PNG, FIF_TIFF};
+	FREE_IMAGE_FORMAT aFormat[] = {FIF_BMP, FIF_JPEG, FIF_PPM, FIF_PNG, FIF_TIFF, FIF_PGMRAW};
 
 	unsigned fNum = sizeof(aFormat) / sizeof(FREE_IMAGE_FORMAT);
 	for(unsigned i=0; i<fNum; i++)
@@ -196,6 +196,10 @@ FREE_IMAGE_FORMAT ImgIO::DecideExtFormat(const string &fName) const
 	{
 		return FIF_JPEG;
 	}
+	else if(!ext.compare("pgm"))
+	{
+		return FIF_PGMRAW;
+	}
 	else
 	{
 		assert(0);
@@ -253,6 +257,12 @@ void SetNonpalette4V(const MyImg &img, FIBITMAP &bmp, RGBQUAD *palette, unsigned
 	FreeImage_SetPixelColor(&bmp, x, y, &color);	
 }
 
+void SetUint8(const MyImg &img, FIBITMAP &bmp, RGBQUAD *palette, unsigned x, unsigned y)
+{
+	unsigned char *pBits = (unsigned char*)FreeImage_GetScanLine(&bmp, y);
+	pBits[x] = (unsigned char)img.CellVal(x, y, 0);
+}
+
 void SetUint16(const MyImg &img, FIBITMAP &bmp, RGBQUAD *palette, unsigned x, unsigned y)
 {
 	unsigned short *pBits = (unsigned short*)FreeImage_GetScanLine(&bmp, y);
@@ -290,6 +300,12 @@ void ImgIO::Write(const std::string &fName, MyImg &img) const
 		bpp = 24;
 		flag = JPEG_QUALITYSUPERB;
 	}
+	else if(dataFormat == FIF_PGMRAW)
+	{
+		dataType = FIT_BITMAP;
+		bpp = 8;
+		flag = PNM_DEFAULT;
+	}
 	else 
 	{
 		assert(0);
@@ -313,6 +329,11 @@ void ImgIO::Write(const std::string &fName, MyImg &img) const
 		if(dim.m_z == 1)		SetValue = SetNonpalette1V;
 		else if(dim.m_z == 3)	SetValue = SetNonpalette3V;
 		else					assert(0);
+	}
+	else if (dataFormat == FIF_PGMRAW)
+	{
+		if (dim.m_z == 1)		SetValue = SetUint8;
+		else 					MyAssert(0);
 	}
 	else
 	{

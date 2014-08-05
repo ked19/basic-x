@@ -170,6 +170,15 @@ public:
 	void Gen(Layer &lyrHsv, const Layer &lyrRgb, bool bNormH) const;
 };
 
+class Rgb2Ycbcr
+{
+public:
+	Rgb2Ycbcr();
+	~Rgb2Ycbcr();
+
+	void Gen(Layer &lyrYcbcr, const Layer &lyrRgb) const;
+};
+
 class Gray
 {
 public:
@@ -372,6 +381,7 @@ public:
 	ScaleDimMtxLyr		scaleDimMtx;
 	ScaleDimLyr			scaleDim;
 	Rgb2Hsv				rgb2hsv;
+	Rgb2Ycbcr			rgb2ycbcr;
 	Gray				gray;
 	HisLyr				his;
 	MulLyr				mul;

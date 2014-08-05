@@ -98,6 +98,7 @@ public:
 
 	void Gen(CplxMtx &cmTo, const CplxMtx &cmA, const CplxMtx &cmB);
 	void Gen(Mtx &mtxTo, const Mtx &mtxA, const Mtx &mtxB);
+	void Gen(Mtx &mtxTo, const Mtx &mtxB);
 
 private:
 };
@@ -209,6 +210,16 @@ public:
 
 	void Gen(DATA &vMin, DATA &vMax, const Mtx &m) const;
 };
+
+class ScaleVal
+{
+public:
+	ScaleVal();
+	~ScaleVal();
+
+	void Gen(Mtx &m, DATA min, DATA max) const;
+};
+
 //*************************************************************************************************
 
 class ScaleDim
@@ -259,6 +270,9 @@ public:
 
 	void Gen(Mtx &mtxR, const Mtx &mtxA, const Mtx &mtxB) const;
 	void Gen(Mtx &mtx, DATA scl) const;
+
+	void GenTA(Mtx &mtxR, const Mtx &mtxA) const;
+	void GenTA(Mtx &mtxR, const Mtx &mtxA, const Mtx &mtxB) const;
 
 	static void Test();
 
@@ -338,7 +352,7 @@ public:
 	HisEqual();
 	~HisEqual();
 
-	void Gen(Mtx &mtx, unsigned levlNum, bool bReval=true, Mtx *pMSkip=0);
+	void Gen(Mtx &mtx, unsigned levlNum, Mtx *pMSkip=0);
 	void Reval(Mtx &mtx, Mtx *pMSkip=0);
 
 private:
@@ -361,13 +375,21 @@ public:
 
 //*************************************************************************************************
 
-class Thrd
+class BinThrd
 {
 public:
-	Thrd();
-	~Thrd();
+	BinThrd();
+	~BinThrd();
 
-	void Gen(Mtx &mtx, DATA thrd);
+	void Gen(Mtx &mtx, DATA thrd, bool bRmLow);
+};
+class Clamp
+{
+public:
+	Clamp();
+	~Clamp();
+
+	void Gen(Mtx &mtx, DATA thrd, bool bRmLow, DATA repV);
 };
 
 class Otsu
@@ -409,6 +431,14 @@ public:
 	void Gen(Mtx &mtxOut, Mtx &mtxIn, unsigned len);
 };
 
+class MorphGray{
+public:
+	MorphGray();
+	~MorphGray();
+
+	void Gen(Mtx &mtxOut, Mtx &mtxIn, Mtx mtxKerl, bool bDilate);
+};
+
 //*************************************************************************************************
 
 class DoG
@@ -434,6 +464,55 @@ public:
 
 //*************************************************************************************************
 
+// AX = B
+class Solv_GElim
+{
+public:
+	Solv_GElim();
+	~Solv_GElim();
+
+	int Gen(Mtx &mtxX, Mtx &mtxA, Mtx &mtxB, unsigned aIdxR[], bool bDebug = false);
+};
+
+class QR_symmetric
+{
+public:
+	QR_symmetric();
+	~QR_symmetric();
+
+	int Gen(Mtx &mtxQ, Mtx &mtxR, Mtx const &mtxIn, bool bDebug = false);
+};
+
+class Eigen_symmetric
+{
+public:
+	Eigen_symmetric();
+	~Eigen_symmetric();
+
+	int Gen(Mtx &mtxEVal, Mtx &mtxQ, Mtx &mtxR, Mtx &mtxTmp, unsigned maxLoop = 5000, bool bDebug = false);	
+};
+
+// AX = B
+class LeastSquare
+{
+public:
+	LeastSquare();
+	~LeastSquare();
+
+	int Gen(Mtx &mtxX, Mtx &mtxA, Mtx &mtxB, Mtx &mtxAA, Mtx &mtxAB, unsigned aIdx[], bool bDebuf = false);
+};
+
+class RegionLabel
+{
+public:
+	RegionLabel();
+	~RegionLabel();
+
+	void Gen(Mtx &mtxLab, Mtx &mtxIn, vector<unsigned>&idx);
+};
+
+//*************************************************************************************************
+
 void Rotate2D(DATA aOut[], const DATA aIn[], DATA ang, const DATA aCnt[]);
 DATA Length2D(DATA x, DATA y);
 
@@ -442,39 +521,47 @@ DATA Length2D(DATA x, DATA y);
 class G_MtxOp
 {
 public:
-	Output			out;
-	Zero			zero;
-	One				one;
-	I				I;
-	Abs				abs;
-	Norm			norm;
-	CellMultiply	cellX;
-	Gauss2D			Gauss;
-	FFT				fft;
-	FFT				ifft;
-	Conv			conv;
-	Sum				sum;
-	Avg				avg;
-	Dev				dev;
-	Rng				rng;
-	CrossCorr		crossCorr;
-	ScaleDim		scaleDim;
-	Add				add;
-	Sub				sub;		
-	Mul				mul;
+	Output				out;
+	Zero				zero;
+	One					one;
+	I					I;
+	Abs					abs;
+	Norm				norm;
+	CellMultiply		cellX;
+	Gauss2D				Gauss;
+	FFT					fft;
+	FFT					ifft;
+	Conv				conv;
+	Sum					sum;
+	Avg					avg;
+	Dev					dev;
+	Rng					rng;
+	CrossCorr			crossCorr;
+	ScaleDim			scaleDim;
+	ScaleVal			scaleVal;
+	Add					add;
+	Sub					sub;		
+	Mul					mul;
 	//Inv				inv;
-	Hessian			Hess;
-	Derivate		der;
-	Median			median;
-	MedFlt			medFlt;
-	His				his;
-	HisEqual		hisEqual;
-	Distance		dis;
-	Thrd			thrd;
-	Otsu			Otsu;
-	Dilate			dilate;
-	Erose			erose;
-	DoG				DoG;
+	Hessian				Hess;
+	Derivate			der;
+	Median				median;
+	MedFlt				medFlt;
+	His					his;
+	HisEqual			hisEqual;
+	Distance			dis;
+	BinThrd				binThrd;
+	Clamp  				clamp;
+	Otsu				Otsu;
+	Dilate				dilate;
+	Erose				erose;
+	MorphGray 			morphGray;
+	DoG					DoG;
+	Solv_GElim			solv_GElim;
+	QR_symmetric 		qr_sym;
+	Eigen_symmetric		eigen_sym;
+	LeastSquare			leastSquare;
+	RegionLabel			regionLabel;
 
 private:
 };

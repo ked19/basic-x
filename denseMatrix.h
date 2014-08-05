@@ -31,6 +31,7 @@ public:
 	void CopyFrom(float *pData);
 	void CopyTo(DATA *pData) const;
 	void CopyTo(float *pData) const;
+	void CopyTo(unsigned char* pData) const;
 
 	static void Test();
 
