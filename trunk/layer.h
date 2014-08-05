@@ -94,7 +94,7 @@ public:
 	MyImg(const Layer &lyr);
 	~MyImg();
 
-	MyImg* ConvertGray() const;
+	MyImg* ConvertGray();
 
 private:
 };

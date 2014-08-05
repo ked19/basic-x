@@ -172,5 +172,6 @@ void _MyAssert_(bool st, unsigned ln, string fn);
 #define MyAssert(st) (_MyAssert_((st), __LINE__, __FILE__))
 
 void PrintCount(unsigned c, unsigned lim);
+void PrintLine(unsigned c, unsigned lineC);
 
 #endif

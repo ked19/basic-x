@@ -706,6 +706,37 @@ void Rgb2Hsv::Gen(Layer &lyrHsv, const Layer &lyrRgb, bool bNormH) const
 	}
 }
 
+Rgb2Ycbcr::Rgb2Ycbcr()
+{}
+
+Rgb2Ycbcr::~Rgb2Ycbcr()
+{}
+
+// "Faces and Facial Features Detection in Color Images"
+void Rgb2Ycbcr::Gen(Layer &lyrYcbcr, const Layer &lyrRgb) const
+{
+	Vect3D<unsigned> dimRgb = lyrRgb.GetDim();
+	Vect3D<unsigned> dimYbr = lyrYcbcr.GetDim();
+	MyAssert(
+		dimRgb.m_x == dimYbr.m_x &&
+		dimRgb.m_y == dimYbr.m_y &&
+		dimRgb.m_z == dimYbr.m_z);
+	MyAssert(dimRgb.m_z == 3);
+
+	for (unsigned y = 0; y < dimRgb.m_y; y++) {
+		for (unsigned x = 0; x < dimRgb.m_x; x++) {
+			DATA r = lyrRgb.CellVal(x, y, 0);
+			DATA g = lyrRgb.CellVal(x, y, 1);
+			DATA b = lyrRgb.CellVal(x, y, 2);
+
+			lyrYcbcr.CellRef(x, y, 0) =  0.299F * r + 0.587F * g + 0.114F * b + 0;
+			lyrYcbcr.CellRef(x, y, 1) = -0.169F * r - 0.332F * g + 0.500F * b + 128.F;
+			lyrYcbcr.CellRef(x, y, 2) =  0.500F * r - 0.419F * g - 0.081F * b + 128.F; 
+		} // x
+	} // y 
+}
+
+
 Gray::Gray()
 {}
 

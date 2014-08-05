@@ -38,3 +38,10 @@ void PrintCount(unsigned c, unsigned lim)
 		cout << endl;
 	} else {}
 }
+
+void PrintLine(unsigned c, unsigned lineC)
+{
+	if ((c + 1) % lineC == 0) {
+		cout << endl;
+	} else {}
+}

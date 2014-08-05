@@ -71,6 +71,9 @@ public:
     void Range(DATA &min, DATA &max, DATA aV[], unsigned size);
     void Range(float &min, float &max, float aV[], unsigned size);
 
+	//DATA Max3(DATA v0, DATA v1, DATA v2);
+	//DATA MIn3(DATA v0, DATA v1, DATA v2);
+
     DATA Rnd();
 
 private:

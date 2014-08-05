@@ -13,10 +13,16 @@ Layer2D::Layer2D(unsigned xDim, unsigned yDim, unsigned cDim)
 Layer2D::Layer2D(const Layer2D &layOrg)
 	:m_xDim(layOrg.m_xDim), m_yDim(layOrg.m_yDim), m_cDim(layOrg.m_cDim)
 {
+	/*
 	m_vpMtx.clear();
 	for(unsigned c=0; c<m_cDim; c++)
 	{
 		m_vpMtx.push_back(new Mtx2D(*layOrg.m_vpMtx[c]));
+	}
+	*/
+	m_vpMtx.resize(m_cDim);
+	for (unsigned c = 0; c < m_cDim; c++) {
+		m_vpMtx[c] = new Mtx2D(*layOrg.m_vpMtx[c]);
 	}
 }
 
@@ -289,8 +295,35 @@ MyImg::~MyImg()
 
 //*************************************************************************************************
 
-MyImg* MyImg::ConvertGray() const
+MyImg* MyImg::ConvertGray() 
 {
+	if (m_cDim == 1) {
+		return this;
+	} else if(m_cDim == 3 || m_cDim == 4) {
+		for(unsigned y=0; y<m_yDim; y++)
+		{
+			for(unsigned x=0; x<m_xDim; x++)
+			{
+				DATA r = CellVal(x, y, 0);
+				DATA g = CellVal(x, y, 1);
+				DATA b = CellVal(x, y, 2);
+				DATA gray = 0.3F*r + 0.59F*g + 0.11F*b;
+
+				CellRef(x, y, 0) = gray;
+				CellRef(x, y, 1) = gray;
+				CellRef(x, y, 2) = gray;
+			}
+		}
+		return this;
+	}
+	else
+	{
+		MyAssert(0);
+	}
+	return 0;
+	
+
+	/*
 	if(m_cDim == 1)
 	{
 		MyImg *pGray = new MyImg(*this);
@@ -316,6 +349,7 @@ MyImg* MyImg::ConvertGray() const
 		assert(0);
 	}
 	return 0;
+	*/
 }
 
 //*************************************************************************************************

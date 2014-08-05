@@ -145,6 +145,17 @@ void Mtx2D::CopyTo(float *pData) const
 	}
 }
 
+void Mtx2D::CopyTo(unsigned char *pData) const
+{
+	unsigned mSize = m_xDim * m_yDim;
+	unsigned loc = 0;
+	for(unsigned y = 0; y < m_yDim; y++) {
+		for(unsigned x = 0; x < m_xDim; x++) {
+			pData[loc++] = (unsigned char)CellVal(x, y);
+		}
+	}
+}
+
 /*
 void Mtx2D::Test()
 {
