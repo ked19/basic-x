@@ -14,18 +14,16 @@ ImgIO::~ImgIO()
 
 FIBITMAP* ImgIO::Load2Bmp(const string &fName) const
 {
-	FREE_IMAGE_FORMAT aFormat[] = {FIF_BMP, FIF_JPEG, FIF_PPM, FIF_PNG, FIF_TIFF, FIF_PGMRAW};
+	FREE_IMAGE_FORMAT aFormat[] = {FIF_BMP, FIF_JPEG, FIF_PPM, FIF_PNG, FIF_TIFF, FIF_PGMRAW, FIF_PNG};
 
 	unsigned fNum = sizeof(aFormat) / sizeof(FREE_IMAGE_FORMAT);
-	for(unsigned i=0; i<fNum; i++)
-	{
+	for(unsigned i = 0; i < fNum; i++) {
 		FIBITMAP *bmp = FreeImage_Load(aFormat[i], fName.c_str());
-		if(bmp)
-		{
+		if(bmp) {
 			return bmp;
-		}
+		} else {}
 	}
-	assert(0);
+	MyAssert(0);
 	return 0;
 }
 
@@ -181,28 +179,21 @@ MyImg* ImgIO::Read(const std::string &fName) const
 FREE_IMAGE_FORMAT ImgIO::DecideExtFormat(const string &fName) const
 {
 	size_t loc = fName.rfind('.');
-	assert(loc != string::npos);
+	MyAssert(loc != string::npos);
 	string ext = fName.substr(loc+1);
 
-	if(!ext.compare("bmp"))
-	{
+	if (!ext.compare("bmp")) {
 		return FIF_BMP;
-	}
-	else if(!ext.compare("tif") || !ext.compare("tiff"))
-	{
+	} else if (!ext.compare("tif") || !ext.compare("tiff")) {
 		return FIF_TIFF;
-	}
-	else if(!ext.compare("jpg") || !ext.compare("jpeg"))
-	{
+	} else if (!ext.compare("jpg") || !ext.compare("jpeg")) {
 		return FIF_JPEG;
-	}
-	else if(!ext.compare("pgm"))
-	{
+	} else if (!ext.compare("pgm")) {
 		return FIF_PGMRAW;
-	}
-	else
-	{
-		assert(0);
+	} else if (!ext.compare("png")) {
+		return FIF_PNG;
+	} else {
+		MyAssert(0);
 	}
 	return FIF_UNKNOWN;
 }
@@ -282,62 +273,52 @@ void ImgIO::Write(const std::string &fName, MyImg &img) const
 	FREE_IMAGE_TYPE dataType;
 	unsigned bpp;
 	int flag;
-	if(dataFormat == FIF_BMP)
-	{
+	if (dataFormat == FIF_BMP) {
 		dataType = FIT_BITMAP;
 		bpp = 32;
 		flag = BMP_DEFAULT;
-	}
-	else if(dataFormat == FIF_TIFF)
-	{
+	} else if (dataFormat == FIF_TIFF) {
 		dataType = FIT_UINT16;
 		bpp = 16;
 		flag = TIFF_NONE;
-	}
-	else if(dataFormat == FIF_JPEG)
-	{
+	} else if (dataFormat == FIF_JPEG) {
 		dataType = FIT_BITMAP;
 		bpp = 24;
 		flag = JPEG_QUALITYSUPERB;
-	}
-	else if(dataFormat == FIF_PGMRAW)
-	{
+	} else if (dataFormat == FIF_PGMRAW) {
 		dataType = FIT_BITMAP;
 		bpp = 8;
 		flag = PNM_DEFAULT;
-	}
-	else 
-	{
-		assert(0);
+	} else if (dataFormat == FIF_PNG) {
+		dataType = FIT_BITMAP;
+		bpp = 24;
+		flag = PNG_Z_NO_COMPRESSION;
+	} else {
+		MyAssert(0);
 	}
 
 	void (*SetValue)(const MyImg&, FIBITMAP&, RGBQUAD*, unsigned, unsigned);
-	if(dataFormat == FIF_BMP)
-	{
-		if(dim.m_z == 1)		SetValue = SetNonpalette1V;
-		else if(dim.m_z == 2)	SetValue = SetNonpalette2V;
-		else if(dim.m_z == 3)	SetValue = SetNonpalette3V;
-		else if(dim.m_z == 4)	SetValue = SetNonpalette4V;
-		else					assert(0);
-	}
-	else if(dataFormat == FIF_TIFF)
-	{
+	if (dataFormat == FIF_BMP) {
+		if (dim.m_z == 1)		SetValue = SetNonpalette1V;
+		else if (dim.m_z == 2)	SetValue = SetNonpalette2V;
+		else if (dim.m_z == 3)	SetValue = SetNonpalette3V;
+		else if (dim.m_z == 4)	SetValue = SetNonpalette4V;
+		else					MyAssert(0);
+	} else if (dataFormat == FIF_TIFF) {
 		SetValue = SetUint16;
-	}
-	else if(dataFormat == FIF_JPEG)
-	{
-		if(dim.m_z == 1)		SetValue = SetNonpalette1V;
-		else if(dim.m_z == 3)	SetValue = SetNonpalette3V;
-		else					assert(0);
-	}
-	else if (dataFormat == FIF_PGMRAW)
-	{
+	} else if (dataFormat == FIF_JPEG) {
+		if (dim.m_z == 1)		SetValue = SetNonpalette1V;
+		else if (dim.m_z == 3)	SetValue = SetNonpalette3V;
+		else					MyAssert(0);
+	} else if (dataFormat == FIF_PGMRAW) {
 		if (dim.m_z == 1)		SetValue = SetUint8;
 		else 					MyAssert(0);
-	}
-	else
-	{
-		assert(0);
+	} else if (dataFormat == FIF_PNG) {
+		if (dim.m_z == 1)		SetValue = SetNonpalette1V;
+		else if (dim.m_z == 3)	SetValue = SetNonpalette3V;
+		else					MyAssert(0);
+	} else {
+		MyAssert(0);
 	}
 
 	cout << "write value.." << endl;

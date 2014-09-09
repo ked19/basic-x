@@ -16,6 +16,25 @@
 
 using namespace std;
 
+class ClampLyr
+{
+public:
+	ClampLyr();
+	~ClampLyr();
+
+	void Gen(Layer &lyr, DATA thrd, bool bRmLow, DATA repV);
+
+};
+
+class BlendLyr
+{
+public:
+	BlendLyr();
+	~BlendLyr();
+
+	void Gen(Layer &lyrOut, const Mtx &mtxIn, DATA ratio) const;
+};
+
 class SaveLyr
 {
 public:
@@ -242,6 +261,7 @@ public:
 	~AddLyr();
 
 	void Gen(Layer &lyr, DATA v);
+	void Gen(Layer &lyr, const Mtx &mtx);
 };
 
 class CellMultiplyLyr
@@ -393,6 +413,8 @@ public:
 	ConvLyr				conv;
 	DoGLyr				DoG;
 	SplattingLyr		splt;
+	BlendLyr			blend;
+	ClampLyr 			clamp;
 
 private:
 };

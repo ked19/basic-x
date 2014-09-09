@@ -1,6 +1,8 @@
 #include "layer.h"
 
-Layer2D::Layer2D(unsigned xDim, unsigned yDim, unsigned cDim)
+Layer2D::Layer2D(const unsigned xDim, 
+				 const unsigned yDim, 
+				 const unsigned cDim)
 	:m_xDim(xDim), m_yDim(yDim), m_cDim(cDim)
 {
 	m_vpMtx.clear();
@@ -186,6 +188,12 @@ Mtx* Layer2D::GetMtx(unsigned int c) const
 {
 	Mtx *pMtx = new Mtx(*m_vpMtx[c]);
 	return pMtx;
+}
+
+Layer2D Layer2D::GetRgb()
+{
+	MyAssert(m_cDim >= 3);
+	return Layer2D(*this, 0, 0, 0, m_xDim, m_yDim, 3);
 }
 
 //*************************************************************************************************

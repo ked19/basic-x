@@ -9,7 +9,7 @@ using namespace std;
 class Layer2D
 {
 public:
-	Layer2D(unsigned xDim, unsigned yDim, unsigned cDim);
+	Layer2D(const unsigned xDim, const unsigned yDim, const unsigned cDim);
 	Layer2D(const Layer2D &layOrg);
 	Layer2D(const Layer2D &layOrg, unsigned xOffset, unsigned yOffset, unsigned cOffset, unsigned xDim, unsigned yDim, unsigned cDim);
 	Layer2D(const Mtx &mtx);
@@ -33,6 +33,8 @@ public:
 
 	Mtx* GetMtx(unsigned c) const;
 	//Layer2D* GetLayer2D() const;
+
+	Layer2D GetRgb();
 
 private:
 	vector<Mtx*> m_vpMtx; 
