@@ -1135,15 +1135,18 @@ Sub::~Sub()
 
 void Sub::Gen(Mtx &mtxBase, const Mtx &suber) const
 {
-	Vect2D<unsigned> dim = mtxBase.GetDim();
+	Vect2D<unsigned> dimBase = mtxBase.GetDim();
+	Vect2D<unsigned> dimSub  = suber.GetDim();
+	MyAssert(dimBase.m_x == dimSub.m_x &&
+			 dimBase.m_y == dimSub.m_y);
 
-	for(unsigned y = 0; y < dim.m_y; y++) {
-		for(unsigned x = 0; x < dim.m_x; x++) {
-			mtxBase.CellRef(x, y) = 
-				mtxBase.CellVal(x, y) - suber.CellVal(x, y);
+	for(unsigned y = 0; y < dimBase.m_y; y++) {
+		for(unsigned x = 0; x < dimBase.m_x; x++) {
+			mtxBase.CellRef(x, y) -= suber.CellVal(x, y);
 		}
 	}
 }
+
 void Sub::Gen(DATA cNum, Mtx &mtxSuber) const
 {
 	Vect2D<unsigned> dim = mtxSuber.GetDim();
@@ -1229,6 +1232,26 @@ void Mul::GenTA(Mtx &mtxR, const Mtx &mtxA, const Mtx &mtxB) const
 			DATA r = 0;
 			for(unsigned c = 0; c < dimA.m_y; c++) {
 				r += mtxA.CellVal(y, c) * mtxB.CellVal(x, c);
+			} // c
+			mtxR.CellRef(x, y) = r;
+		} // x
+	} // y
+}
+
+void Mul::GenTB(Mtx &mtxR, const Mtx &mtxA, const Mtx &mtxB) const
+{
+	Vect2D<unsigned> dimR = mtxR.GetDim();
+	Vect2D<unsigned> dimA = mtxA.GetDim();
+	Vect2D<unsigned> dimB = mtxB.GetDim();
+	MyAssert(dimR.m_x == dimB.m_y && 
+			 dimR.m_y == dimA.m_y && 
+			 dimA.m_x == dimB.m_x);
+
+	for(unsigned y = 0; y < dimR.m_y; y++) {
+		for(unsigned x = 0; x < dimR.m_x; x++) {
+			DATA r = 0;
+			for(unsigned c = 0; c < dimA.m_x; c++) {
+				r += mtxA.CellVal(c, y) * mtxB.CellVal(c, x);
 			} // c
 			mtxR.CellRef(x, y) = r;
 		} // x
@@ -1754,6 +1777,343 @@ void Clamp::Gen(Mtx &mtx, DATA thrd, bool bRmLow, DATA repV)
 
 //*************************************************************************************************
 
+Sobel::Sobel() 
+{}
+
+Sobel::~Sobel()
+{}
+
+void Sobel::Gen(Layer &lyrOut, const Mtx &mtxIn, bool bMag, bool bDebug)
+{
+	if (bDebug) {
+		cout << "Sobel" << endl;
+	} else {}
+
+	Vect2D<unsigned> dimIn = mtxIn.GetDim();
+	Vect3D<unsigned> dimOut = lyrOut.GetDim();
+	MyAssert(dimIn.m_x == dimOut.m_x &&
+			 dimIn.m_y == dimOut.m_y);
+	if (bMag) {
+		MyAssert(dimOut.m_z >= 3);
+	} else {
+		MyAssert(dimOut.m_z >= 2);
+	}
+
+	// Gx = [-1 0 +1]
+	//      [-2 0 +2]
+	//      [-1 0 +1]
+	//
+	// Gy = [+1 +2 +1]
+	//      [ 0  0  0]
+	//      [-1 -2 -1]
+	static Mtx mtxBound(3, 3);
+	for (unsigned y = 0; y < dimOut.m_y; y++) {
+		for (unsigned x = 0; x < dimOut.m_x; x++) {
+			if (bDebug) {
+				cout << "(" << x << "," << y << ") "; 
+			} else {}
+
+			Mtx *pMtxR = 0;
+			if (x != 0 && x != dimOut.m_x - 1 &&
+				y != 0 && y != dimOut.m_y - 1) {
+				pMtxR = new Mtx(mtxIn, x - 1, y - 1, 3, 3);
+			} else {
+				for (unsigned yy = 0; yy < 3; yy++) {
+					int yLoc = (int)y + yy - 1;
+					if (yLoc < 0) {
+						yLoc = 0;
+					} else if (yLoc >= (int)dimOut.m_y) {
+						yLoc = dimOut.m_y - 1;
+					} else {}
+
+					for (unsigned xx = 0; xx < 3; xx++) {
+						int xLoc = (int)x + xx - 1;
+						if (xLoc < 0) {
+							xLoc = 0;
+						} else if (xLoc >= (int)dimOut.m_x) {
+							xLoc = dimOut.m_x - 1;
+						} else {}
+
+						mtxBound.CellRef(xx, yy) = mtxIn.CellVal(xLoc, yLoc);
+					} // xx
+				} // yy
+				pMtxR = new Mtx(mtxBound);
+				if (bDebug) {
+					cout << "b ";
+				} else {}
+			} // if bound
+
+			MyAssert(pMtxR != 0);
+			DATA xD = 
+				- pMtxR->CellVal(0, 0) - 2.F * pMtxR->CellVal(0, 1) - pMtxR->CellVal(0, 2)
+				+ pMtxR->CellVal(2, 0) + 2.F * pMtxR->CellVal(2, 1) + pMtxR->CellVal(2, 2);
+
+			DATA yD = 
+				- pMtxR->CellVal(0, 0) - 2.F * pMtxR->CellVal(1, 0) - pMtxR->CellVal(2, 0)
+				+ pMtxR->CellVal(0, 2) + 2.F * pMtxR->CellVal(1, 2) + pMtxR->CellVal(2, 2);
+
+			xD /= 4.F;
+			yD /= 4.F;
+			lyrOut.CellRef(x, y, 0) = xD;
+			lyrOut.CellRef(x, y, 1) = yD;
+
+			delete pMtxR;
+
+			if (bMag) {
+				//MyAssert(0);
+				lyrOut.CellRef(x, y, 2) = sqrt(xD * xD + yD * yD);
+			} else {}
+		} // x
+	} // y
+
+	if (bDebug) {
+		cout << "Sobel ok" << endl;
+	} else {}
+}
+
+SIFT_desc::SIFT_desc()
+	: m_patchLen(m_blockLen * m_blockNum)
+	, m_superPL((unsigned)(m_patchLen * 1.42F + 0.5F) + 1)
+	//, m_mtxG(m_patchLen, m_patchLen)
+	, m_mtxG(m_superPL, m_superPL)
+{
+	DATA delta = 1.8F; //1.5F;
+	mtxOp.Gauss.Gen(m_mtxG, delta, delta, true);
+}
+
+SIFT_desc::~SIFT_desc()
+{}
+
+unsigned SIFT_desc::GetDscNum()
+{
+	return m_blockNum * m_blockNum * m_subDNum;
+}
+
+unsigned SIFT_desc::GetSuperPL()
+{
+	return m_superPL;
+}
+
+void AccountBlock(DATA aBin[], unsigned binNum, Mtx &mtxAng, Mtx &mtxMag, bool bDebug)
+{
+	if (bDebug) {
+		cout << "AccountBlock" << endl;
+	} else {}
+
+	Vect2D<unsigned> dimAng = mtxAng.GetDim();
+	Vect2D<unsigned> dimMag = mtxMag.GetDim();
+	MyAssert(dimAng.m_x == dimMag.m_x &&
+			 dimAng.m_y == dimMag.m_y);
+
+	unsigned subAng = 360 / binNum;
+	MyAssert(360 % binNum == 0);
+
+	for (unsigned i = 0; i < binNum; i++) {
+		aBin[i] = 0;
+	}
+
+	for (unsigned y = 0; y < dimAng.m_y; y++) {
+		for (unsigned x = 0; x < dimAng.m_x; x++) {
+			MyAssert(mtxAng.CellVal(x, y) >= 0);
+			unsigned idx = (unsigned)mtxAng.CellVal(x, y) / subAng;
+			idx = idx % (binNum);
+			if (bDebug) {
+				if (idx >= binNum) {
+					cout << "idx: " << idx << " "
+				 	 	 << "ang: " << mtxAng.CellVal(x, y) << endl;
+				} else {}
+			} else {}
+			MyAssert(idx < binNum);
+			aBin[idx] += mtxMag.CellVal(x, y);
+		}
+	}
+
+	if (bDebug) {
+		cout << "AccountBlock ok" << endl;
+	} else {}
+}
+
+//void SIFT_desc::GetOrient(vector<unsigned> &ort, vector<DATA> &mag, Mtx &mtxAng, Mtx &mtxMag, bool bDebug)
+void SIFT_desc::GetOrient(unsigned &ort, DATA &mag, Mtx &mtxAng, Mtx &mtxMag, bool bDebug)
+{
+	static DATA aOrtBin[m_ortNum];
+	AccountBlock(aOrtBin, m_ortNum, mtxAng, mtxMag, bDebug);
+
+	DATA angFst = 0;	unsigned afIdx = 0;
+	DATA angSnd = 0;	unsigned asIdx = 0;
+	for (unsigned i = 0; i < 36; i++) {
+		DATA ac = aOrtBin[i];
+		if (ac > angFst) {
+			angSnd = angFst;	asIdx = afIdx;
+			angFst = ac;		afIdx = i;
+		} else if (ac > angSnd) {
+			angSnd = ac;		asIdx = i;
+		} else {}
+	}	
+
+	ort = afIdx * 360 / m_ortNum;	mag = angFst;
+	/*
+	ort[0] = afIdx * 360 / m_ortNum;	mag[0] = angFst;
+	ort[1] = 0;							mag[1] = 0;
+	if (angSnd > 0.8F * angFst) {
+		ort[1] = asIdx * 360 / m_ortNum;
+		mag[1] = angSnd;
+	} else {}
+	*/
+}
+
+void SIFT_desc::Gen(unsigned &rOrt, DATA &rMag, DATA dsc[], 
+		Mtx &mtxIn, Layer &lyrGrd, Layer &lyrRot, bool bDebug)
+{	
+	if (bDebug) {
+		cout << "sift_desc" << endl;
+	} else {}
+
+	Vect2D<unsigned> dimIn = mtxIn.GetDim();
+	Vect3D<unsigned> dimGrd = lyrGrd.GetDim();
+	Vect3D<unsigned> dimRot = lyrRot.GetDim();
+	//MyAssert(dimIn.m_x == m_patchLen &&
+	//		 dimIn.m_y == m_patchLen);
+	MyAssert(dimIn.m_x == m_superPL &&
+			 dimIn.m_y == m_superPL);
+	MyAssert(dimRot.m_x == m_patchLen &&
+			 dimRot.m_y == m_patchLen);
+	MyAssert(dimIn.m_x == dimGrd.m_x &&
+			 dimIn.m_y == dimGrd.m_y);
+	MyAssert(dimGrd.m_z >= 3);
+	MyAssert(dimRot.m_z >= 2);
+
+	mtxOp.Sobel.Gen(lyrGrd, mtxIn, true);
+
+	Mtx *pMtxMag = lyrGrd.GetMtx(2);
+	mtxOp.cellX.Gen(*pMtxMag, m_mtxG);
+
+	Mtx &mtxAng = mtxIn;
+	for (unsigned y = 0; y < dimIn.m_y; y++) {
+		for (unsigned x = 0; x < dimIn.m_x; x++) {
+			DATA ang = atan2(lyrGrd.CellVal(x, y, 1), lyrGrd.CellVal(x, y, 0));
+			ang = (ang + PI) * R2D;
+			mtxAng.CellRef(x, y) = ang;
+		} // x
+	} // y
+
+	//*******************************************
+	// compute orientation of this patch
+	//*******************************************
+	unsigned ort;
+	DATA mag;	
+	GetOrient(ort, mag, mtxAng, *pMtxMag, false); //true);
+	if (bDebug) {
+		//cout << "orient: " << ort[0] << " " << ort[1] << endl;
+		cout << "orient: " << ort << endl;
+	} else {}
+	rOrt = ort;
+	rMag = mag;
+
+	//*******************************************
+	// rotate
+	//*******************************************	
+	if (bDebug) {
+		cout << "rotate" << endl;
+	} else {}
+	for (unsigned y = 0; y < dimIn.m_y; y++) {
+		for (unsigned x = 0; x < dimIn.m_x; x ++) {
+			mtxAng.CellRef(x, y) -= rOrt;
+
+			if (mtxAng.CellVal(x, y)  < 0) {
+				mtxAng.CellRef(x, y) += 360.F;
+			} else {}
+		}
+	}
+
+	// x = cosA, 	y = sinA
+	// xx = cosB,	yy = sinB
+	// sin(A + B) = sinA * cosB + cosA * sinB = y * xx + x * yy
+	// cos(A + B) = cosA * cosB - sinA * sinB = x * xx - y * yy
+	DATA rA = rOrt * D2R;
+	DATA xx = cos(rA);
+	DATA yy = sin(rA);
+
+	Mtx mtxAng2(*lyrRot.GetMtx(0));
+	Mtx mtxMag2(*lyrRot.GetMtx(1));
+	for (unsigned y = 0; y < dimRot.m_y; y++) {
+		int yDis = (int)y - dimRot.m_y / 2;
+		for (unsigned x = 0; x < dimRot.m_x; x++) {
+			int xDis = (int)x - dimRot.m_x / 2;
+
+			int xLoc = (int)(xDis * xx - yDis * yy + dimIn.m_x / 2.F + 0.5F);
+			int yLoc = (int)(yDis * xx + xDis * yy + dimIn.m_y / 2.F + 0.5F);
+			MyAssert(mtxAng.IsInside(xLoc, yLoc));
+
+			mtxAng2.CellRef(x, y) = mtxAng.CellVal(xLoc, yLoc);
+			mtxMag2.CellRef(x, y) = pMtxMag->CellVal(xLoc, yLoc);
+		}
+	}
+	if (bDebug) {
+		cout << "rotate ok" << endl;
+	} else {}
+
+	//*******************************************
+	// account descriptor
+	//*******************************************
+	if (bDebug) {
+		cout << "block no:" << endl;
+	} else {}
+	for (unsigned yB = 0; yB < m_blockNum; yB++) {
+		for (unsigned xB = 0; xB < m_blockNum; xB++) {
+			Mtx mtxAng_b(mtxAng2,  xB * m_blockLen, yB * m_blockLen, m_blockLen, m_blockLen);
+			Mtx mtxMag_b(mtxMag2,  xB * m_blockLen, yB * m_blockLen, m_blockLen, m_blockLen);
+
+			unsigned dscOff = (yB * m_blockNum + xB) * m_subDNum;
+			AccountBlock(&dsc[dscOff], m_subDNum, mtxAng_b, mtxMag_b, bDebug);
+		} // xB
+	} // yB
+	
+	
+	//*******************************************
+	// normalization
+	//*******************************************
+	unsigned dscNum = m_patchLen * m_subDNum;
+	MyAssert(dscNum == 128);
+	DATA dscSum = 0;
+	for (unsigned d = 0; d < dscNum; d++) {
+		dscSum += dsc[d] * dsc[d];
+	}
+
+	if (dscSum < 1e-8) {
+		DATA uu = 1.F / dscNum;
+		uu = sqrt(uu);
+		for (unsigned d = 0; d < dscNum; d++) {
+			dsc[d] = uu;
+		}
+	} else {
+		dscSum = sqrt(dscSum);
+
+		bool bRe = false;
+		DATA ds2 = 0;
+		for (unsigned d = 0; d < dscNum; d++) {
+			dsc[d] /= dscSum;
+			if (dsc[d] > 0.2F) {
+				dsc[d] = 0.2F;
+				bRe = true;
+			} else {}
+			ds2 += dsc[d] * dsc[d];
+		}
+
+		if (bRe) {
+			ds2 = sqrt(ds2);
+			for (unsigned d = 0; d < dscNum; d++) {
+				dsc[d] /= ds2;
+			}
+		} else {}
+	}
+
+	if (bDebug) {
+		cout << "sift_desc ok" << endl;
+	} else {}
+	
+}
+
 Otsu::Otsu()
 {}
 
@@ -2106,6 +2466,118 @@ DATA CrossCorr::Gen(const Mtx &mtxIn, Mtx &mtxMsk, unsigned xOff, unsigned yOff)
 //
 //*************************************************************************************************
 
+Inverse_Newton::Inverse_Newton()
+{}
+
+Inverse_Newton::~Inverse_Newton()
+{}
+
+void Inverse_Newton::Gen(Mtx &mtxOut, const Mtx &mtxIn, 
+	Mtx &mtxV, Mtx &mtxTmp, unsigned itNum)
+{
+	Vect2D<unsigned> dimOut = mtxOut.GetDim();
+	Vect2D<unsigned> dimIn  = mtxIn.GetDim();
+	Vect2D<unsigned> dimTmp = mtxTmp.GetDim();
+	MyAssert(dimOut.m_x == dimOut.m_y);
+	MyAssert(dimOut.m_x == dimIn.m_x && 
+			 dimOut.m_y == dimIn.m_y);
+	MyAssert(dimTmp.m_x == dimIn.m_x &&
+			 dimTmp.m_y == dimIn.m_y);
+
+	//*******************************************
+	// initial matrix
+	//*******************************************
+//cout << "******************************" << endl;
+//cout << mtxIn.CellVal(50, 0) << " " << mtxIn.CellVal(0, 50) << endl;
+
+	DATA maxX = -1e10;
+	for (unsigned x = 0; x < dimIn.m_x; x++) {
+		DATA sumX = 0;
+		for (unsigned y = 0; y < dimIn.m_y; y++) {
+			sumX += fabs(mtxIn.CellVal(x, y));
+		}
+		if (sumX > maxX) {
+			maxX = sumX;
+		} else {}
+	}
+	MyAssert(maxX > 0);
+
+	DATA maxY = -1e10;
+	for (unsigned y = 0; y < dimIn.m_y; y++) {
+		DATA sumY = 0;
+		for (unsigned x = 0; x < dimIn.m_x; x++) {
+			sumY += fabs(mtxIn.CellVal(x, y));
+		}
+		if (sumY > maxY) {
+			maxY = sumY;
+		} else {}
+	}
+	MyAssert(maxY > 0);
+
+	for (unsigned y = 0; y < dimOut.m_y; y++) {
+		for (unsigned x = 0; x < dimOut.m_x; x++) {
+			mtxOut.CellRef(x, y) = mtxIn.CellVal(y, x);
+		}
+	}
+	mtxOp.mul.Gen(mtxOut, 1.F / (maxX * maxY));
+	//cout << maxX << " " << maxY << endl;
+	//getchar();
+
+	//*******************************************
+	// interation
+	//*******************************************
+	cout << "iteration" << endl;
+	for (unsigned it = 0; it < itNum; it++) {
+		cout << it << " ";
+		if (it == itNum - 1) {
+			cout << endl;
+		}
+		
+		// V
+		mtxV.CopyFrom(mtxOut);
+
+		mtxOp.mul.Gen(mtxOut, mtxIn, mtxV);
+		for (unsigned y = 0; y < dimOut.m_y; y++) {
+			for (unsigned x = 0; x < dimOut.m_x; x++) {
+				mtxOut.CellRef(x, y) = (x == y) ?
+					2.F - mtxOut.CellVal(x, y) :
+					-mtxOut.CellVal(x, y);
+			}
+		}
+
+		mtxOp.mul.Gen(mtxTmp, mtxV, mtxOut);
+		mtxOut.CopyFrom(mtxTmp);
+
+		DATA vMax, vMin;
+		mtxOp.rng.Gen(vMin, vMax, mtxOut);
+		cout << vMin << " " << vMax << endl;
+
+		// test if I
+		mtxOp.mul.Gen(mtxTmp, mtxIn, mtxOut);
+		if (it == itNum - 1) {
+			//mtxOp.out << mtxTmp;
+		} else {}
+		bool bI = true;
+		for (unsigned y = 0; y < dimTmp.m_y; y++) {
+			for (unsigned x = 0; x < dimTmp.m_x; x++) {
+				bI = (x == y) ?
+					myMath.IsEqual(mtxTmp.CellVal(x, y), 1.F, 1e-3) :
+					myMath.IsEqual(mtxTmp.CellVal(x, y), 0,   1e-3);
+				if (!bI) {
+					break;	
+				} else {}
+			} // x
+			if (!bI) {
+				break;
+			} else {}
+		} // y
+		if (bI) {
+			break;
+		} else {}
+	} // it
+	cout << "iteration ok" << endl;
+}
+
 Solv_GElim::Solv_GElim()
 {}
 
@@ -2162,17 +2634,19 @@ int Solv_GElim::Gen(Mtx &mtxX, Mtx &mtxA, Mtx &mtxB, unsigned aIdxR[], bool bDeb
 			cout << endl;
 		} else {}
 
+		bool bZPiv = false;
 		DATA pivVal = mtxA.CellVal(r, aIdxR[r]);
 		if (myMath.IsEqual(pivVal, 0)) {
-			return -1;
+			bZPiv = true;
 		} else {}
-		//MyAssert(!myMath.IsEqual(pivVal, 0));
 
 		//***************************************
 		// elimination
 		//***************************************
 		for (unsigned rElim = r + 1; rElim <= dimA.m_y - 1; rElim++) {
-			DATA ratio = mtxA.CellVal(r, aIdxR[rElim]) / pivVal; 
+			DATA ratio = (bZPiv == false) ?
+				mtxA.CellVal(r, aIdxR[rElim]) / pivVal :
+				0; 
 
 			for (unsigned col = r; col <= dimA.m_x - 1; col++) {
 				mtxA.CellRef(col, aIdxR[rElim]) = 
@@ -2181,7 +2655,7 @@ int Solv_GElim::Gen(Mtx &mtxX, Mtx &mtxA, Mtx &mtxB, unsigned aIdxR[], bool bDeb
 
 			mtxB.CellRef(0, aIdxR[rElim]) = 
 				mtxB.CellVal(0, aIdxR[rElim]) - mtxB.CellVal(0, aIdxR[r]) * ratio;
-		} // rr		
+		} // rr	
 	} // r
 	if (bDebug) {
 		cout << "mtxA: " << endl;
@@ -2202,15 +2676,23 @@ int Solv_GElim::Gen(Mtx &mtxX, Mtx &mtxA, Mtx &mtxB, unsigned aIdxR[], bool bDeb
 
 		mtxX.CellRef(0, aIdxR[r]) = mtxB.CellVal(0, aIdxR[r]) / mtxA.CellVal(r, aIdxR[r]);
 		*/
+		bool bZPiv = false;
 		if (!myMath.IsEqual(mtxA.CellVal(r, aIdxR[r]), 0, 1e-6)) {
 			mtxX.CellRef(0, aIdxR[r]) = mtxB.CellVal(0, aIdxR[r]) / mtxA.CellVal(r, aIdxR[r]);
 		} else {
-			mtxX.CellRef(0, aIdxR[r]) = 1.F;
+			mtxX.CellRef(0, aIdxR[r]) = 0; //1.F;
+			bZPiv = true;
 		}
 
-		for (int rr = 0; rr <= r - 1; rr++) {
-			mtxB.CellRef(0, aIdxR[rr]) -= mtxX.CellVal(0, aIdxR[r]) * mtxA.CellVal(r, aIdxR[rr]);
-		} // rr
+		if (!bZPiv) {
+			for (int rr = 0; rr <= r - 1; rr++) {
+				mtxB.CellRef(0, aIdxR[rr]) -= mtxX.CellVal(0, aIdxR[r]) * mtxA.CellVal(r, aIdxR[rr]);
+			} // rr
+		} else {
+			for (int rr = 0; rr <= r - 1; rr++) {
+				mtxB.CellRef(0, aIdxR[rr]) -= mtxB.CellVal(0, aIdxR[r]);
+			} // rr
+		}
 	} // r 
 	if (bDebug) {
 		cout << "result: " << endl;
@@ -2425,7 +2907,18 @@ int LeastSquare::Gen(Mtx &mtxX, Mtx &mtxA, Mtx &mtxB, Mtx &mtxAA, Mtx &mtxAB, un
 		mtxOp.out << mtxAB;
 	} else {}
 
+	// replace the inversion
 	int errNo = mtxOp.solv_GElim.Gen(mtxX, mtxAA, mtxAB, aIdx);
+	/*
+	Mtx mtxAAt(dimAA.m_x, dimAA.m_y);
+	Mtx mtxT0(dimAA.m_x, dimAA.m_y);
+	Mtx mtxT1(dimAA.m_x, dimAA.m_y);
+	Mtx mtxT2(dimAA.m_x, dimAA.m_y);
+	mtxOp.inverse_Newton.Gen(mtxAAt, mtxAA, mtxT0, mtxT1);
+	cout << "inverse ok" << endl;
+	mtxOp.mul.Gen(mtxX, mtxAAt, mtxAB);
+	int errNo = 0;
+	*/
 
 	if (bDebug) {
 		if (errNo != 0) {

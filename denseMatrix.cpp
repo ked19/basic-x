@@ -1,7 +1,7 @@
 #include "denseMatrix.h"
 //#include "matrixOperation.h"
 
-Mtx2D::Mtx2D(unsigned xDim, unsigned yDim)
+Mtx2D::Mtx2D(const unsigned xDim, const unsigned yDim)
 	:m_xDim(xDim), m_yDim(yDim), m_lineSize(xDim)
 {
 	m_pMemUsedNum = new unsigned;

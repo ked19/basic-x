@@ -273,6 +273,7 @@ public:
 
 	void GenTA(Mtx &mtxR, const Mtx &mtxA) const;
 	void GenTA(Mtx &mtxR, const Mtx &mtxA, const Mtx &mtxB) const;
+	void GenTB(Mtx &mtxR, const Mtx &mtxA, const Mtx &mtxB) const;
 
 	static void Test();
 
@@ -401,6 +402,41 @@ public:
 	DATA Gen(Mtx &mtx, DATA &thrd, unsigned lev=256, DATA valMax=255.F, DATA valMin=0);
 };
 
+class Sobel
+{
+public:
+	Sobel();
+	~Sobel();
+
+	void Gen(Layer &lyrOut, const Mtx &mtxIn, bool bMag, bool bDebug = false);
+};
+
+class SIFT_desc
+{
+public:
+	SIFT_desc();
+	~SIFT_desc();
+
+	void Gen(unsigned &rOrt, DATA &rMag, DATA dsc[], 
+		Mtx &mtxIn, Layer &lyrGrd, Layer &lyrRot, bool bDebug);
+	unsigned GetDscNum();
+	unsigned GetSuperPL();
+
+private:
+	//void GetOrient(vector<unsigned> &ort, vector<DATA> &mag, Mtx &mtxAng, Mtx &mtxMag, bool bDebug);
+	void GetOrient(unsigned &ort, DATA &mag, Mtx &mtxAng, Mtx &mtxMag, bool bDebug);
+
+	static const unsigned m_blockLen = 4;
+	static const unsigned m_blockNum = 4;
+	unsigned m_patchLen;
+	unsigned m_superPL;
+
+ 	static const unsigned m_ortNum = 36;	
+	static const unsigned m_subDNum = 8;
+
+	Mtx m_mtxG;
+};
+
 //*************************************************************************************************
 
 class MedFlt
@@ -472,6 +508,16 @@ public:
 	~Solv_GElim();
 
 	int Gen(Mtx &mtxX, Mtx &mtxA, Mtx &mtxB, unsigned aIdxR[], bool bDebug = false);
+};
+
+class Inverse_Newton
+{
+public:
+	Inverse_Newton();
+	~Inverse_Newton();
+
+	void Gen(Mtx &mtxOut, const Mtx &mtxIn, 
+		Mtx &mtxV, Mtx &mtxTmp, unsigned itNum = 100);
 };
 
 class QR_symmetric
@@ -553,15 +599,18 @@ public:
 	BinThrd				binThrd;
 	Clamp  				clamp;
 	Otsu				Otsu;
+	SIFT_desc 			sift_desc;
 	Dilate				dilate;
 	Erose				erose;
 	MorphGray 			morphGray;
 	DoG					DoG;
 	Solv_GElim			solv_GElim;
+	Inverse_Newton		inverse_Newton;
 	QR_symmetric 		qr_sym;
 	Eigen_symmetric		eigen_sym;
 	LeastSquare			leastSquare;
 	RegionLabel			regionLabel;
+	Sobel 				Sobel;
 
 private:
 };

@@ -13,7 +13,7 @@ using namespace std;
 class Mtx2D
 {
 public:
-	Mtx2D(unsigned xDim, unsigned yDim);
+	Mtx2D(const unsigned xDim, const unsigned yDim);
 	Mtx2D(Vect2D<unsigned> dim);
 	Mtx2D(const Mtx2D &mtxOrg);
 	Mtx2D(const Mtx2D &mtxOrg, unsigned xOffset, unsigned yOffset, unsigned xDim, unsigned yDim);

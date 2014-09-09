@@ -4,6 +4,46 @@ G_LayerOp lyrOp;
 
 //*************************************************************************************************
 
+ClampLyr::ClampLyr()
+{}
+
+ClampLyr::~ClampLyr()
+{}
+
+void ClampLyr::Gen(Layer &lyr, DATA thrd, bool bRmLow, DATA repV)
+{
+	Vect3D<unsigned> dim = lyr.GetDim();
+	for (unsigned c = 0; c < dim.m_z; c++) {
+		mtxOp.clamp.Gen(*lyr.GetMtx(c), thrd, bRmLow, repV);
+	}
+}
+
+BlendLyr::BlendLyr()
+{}
+
+BlendLyr::~BlendLyr()
+{}
+
+void BlendLyr::Gen(Layer &lyrOut, const Mtx &mtxIn, DATA ratio) const
+{
+	MyAssert(ratio >= 0 && ratio <= 1.F);
+
+	Vect3D<unsigned> dimOut = lyrOut.GetDim();
+	Vect2D<unsigned> dimIn = mtxIn.GetDim();
+	MyAssert(dimOut.m_x == dimIn.m_x &&
+			 dimOut.m_y == dimIn.m_y);
+
+	for (unsigned y = 0; y < dimOut.m_y; y++) {
+		for (unsigned x = 0; x < dimOut.m_x; x++) {
+			for (unsigned c = 0; c < dimOut.m_z; c++) {
+				lyrOut.CellRef(x, y, c) = 
+					lyrOut.CellVal(x, y, c) * ratio +
+					mtxIn.CellVal(x, y) * (1.F - ratio);
+			} // c
+		} // x
+	} // y
+} 
+
 SaveLyr::SaveLyr()
 {}
 
@@ -1030,6 +1070,22 @@ void AddLyr::Gen(Layer &lyr, DATA v)
 			for(unsigned x=0; x<dim.m_x; x++)
 			{
 				lyr.CellRef(x, y, z) = lyr.CellVal(x, y, z) + v;
+			}
+		}
+	}
+}
+
+void AddLyr::Gen(Layer &lyr, const Mtx &mtx)
+{
+	Vect3D<unsigned> dimLyr = lyr.GetDim();
+	Vect2D<unsigned> dimMtx = mtx.GetDim();
+	MyAssert(dimLyr.m_x == dimMtx.m_x &&
+			 dimLyr.m_y == dimMtx.m_y);
+
+	for(unsigned y = 0; y < dimLyr.m_y; y++) {
+		for(unsigned x = 0; x < dimLyr.m_x; x++) {
+			for (unsigned c = 0; c < dimLyr.m_z; c++) {
+				lyr.CellRef(x, y, c) += mtx.CellVal(x, y);
 			}
 		}
 	}
