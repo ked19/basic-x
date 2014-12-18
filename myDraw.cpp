@@ -2,13 +2,13 @@
 
 MyDraw myDraw;
 
-Line::Line()
+LineDraw::LineDraw()
 {}
 
-Line::~Line()
+LineDraw::~LineDraw()
 {}
 
-void Line::Gen(Layer &lyrD, Vect2D<DATA> &pFrom, Vect2D<DATA> &pTo, 
+void LineDraw::Gen(Layer &lyrD, Vect2D<DATA> &pFrom, Vect2D<DATA> &pTo, 
 							Vect4D<DATA> &cFrom, Vect4D<DATA> &cTo, bool bDebug)
 {
 	if (bDebug) {
@@ -86,13 +86,13 @@ void Line::Gen(Layer &lyrD, Vect2D<DATA> &pFrom, Vect2D<DATA> &pTo,
 	} else {}
 }
 
-Rectangle::Rectangle()
+RectangleDraw::RectangleDraw()
 {}
 
-Rectangle::~Rectangle()
+RectangleDraw::~RectangleDraw()
 {}
 
-void Rectangle::Gen(Layer &lyrD, Vect2D<DATA> &p0, Vect2D<DATA> &p1, Vect4D<DATA> &c, bool bFull)
+void RectangleDraw::Gen(Layer &lyrD, Vect2D<DATA> &p0, Vect2D<DATA> &p1, Vect4D<DATA> &c, bool bFull)
 {
 	Vect3D<unsigned> dimD = lyrD.GetDim();
 	MyAssert(dimD.m_z == 4);
@@ -138,13 +138,13 @@ void Rectangle::Gen(Layer &lyrD, Vect2D<DATA> &p0, Vect2D<DATA> &p1, Vect4D<DATA
 	}
 }
 
-Arrow::Arrow()
+ArrowDraw::ArrowDraw()
 {}
 
-Arrow::~Arrow()
+ArrowDraw::~ArrowDraw()
 {}
 
-void Arrow::Gen(Layer &lyrD, Vect2D<DATA> &pFrom, Vect2D<DATA> &pTo, 
+void ArrowDraw::Gen(Layer &lyrD, Vect2D<DATA> &pFrom, Vect2D<DATA> &pTo, 
 				Vect4D<DATA> &cA, DATA aScl, DATA aAng, bool bDebug)
 {
 	DATA dX = pTo.m_x - pFrom.m_x;
@@ -166,16 +166,16 @@ void Arrow::Gen(Layer &lyrD, Vect2D<DATA> &pFrom, Vect2D<DATA> &pTo,
 	myDraw.line.Gen(lyrD, pTo, pTo3, cA, cA);
 }
 
-Point::Point()
+PointDraw::PointDraw()
 {}
 
-Point::~Point()
+PointDraw::~PointDraw()
 {}
 
-void Point::Gen(Layer &lyrD, Vect2D<DATA> &pLoc, DATA r, Vect4D<DATA> &cA, bool bDebug)
+void PointDraw::Gen(Layer &lyrD, Vect2D<DATA> &pLoc, DATA r, Vect4D<DATA> &cA, bool bDebug)
 {
 	Vect3D<unsigned> dimD = lyrD.GetDim();
-	MyAssert(dimD.m_z == 4);
+	MyAssert(dimD.m_z == 4 || dimD.m_z == 3);
 
 	int xL = (int)(pLoc.m_x - r + 0.5F);
 	int xR = (int)(pLoc.m_x + r + 0.5F);
@@ -206,18 +206,20 @@ void Point::Gen(Layer &lyrD, Vect2D<DATA> &pLoc, DATA r, Vect4D<DATA> &cA, bool 
 			lyrD.CellRef(x, y, 0) += cA.m_r * cA.m_a;
 			lyrD.CellRef(x, y, 1) += cA.m_g * cA.m_a;
 			lyrD.CellRef(x, y, 2) += cA.m_b * cA.m_a;
-			lyrD.CellRef(x, y, 3) += cA.m_a;
+			if (dimD.m_z == 4) {
+				lyrD.CellRef(x, y, 3) += cA.m_a;
+			} else {}
 		}
 	}
 }
 
-Blend::Blend()
+BlendDraw::BlendDraw()
 {}
 
-Blend::~Blend()
+BlendDraw::~BlendDraw()
 {}
 
-void Blend::Gen(Layer &lyrDraw, const Mtx &mtxIn)
+void BlendDraw::Gen(Layer &lyrDraw, const Mtx &mtxIn)
 {
 	Vect3D<unsigned> dimD = lyrDraw.GetDim();
 	Vect2D<unsigned> dimIn = mtxIn.GetDim();

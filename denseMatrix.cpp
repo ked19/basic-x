@@ -119,6 +119,16 @@ void Mtx2D::CopyFrom(float *pData)
 	}
 }
 
+void Mtx2D::CopyFrom(unsigned char *pData)
+{
+	unsigned loc = 0;
+	for(unsigned y=0; y<m_yDim; y++) {
+		for(unsigned x=0; x<m_xDim; x++) {
+			CellRef(x, y) = pData[loc++];
+		}
+	}
+}
+
 void Mtx2D::CopyTo(DATA *pData) const
 {
 	unsigned mSize = m_xDim * m_yDim;

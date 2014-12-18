@@ -36,7 +36,7 @@ public:
 	//Layer2D* GetLayer2D() const;
 
 private:
-	vector<Layer2D*> m_vpLyr; 
+	std::vector<Layer2D*> m_vpLyr; 
 
 protected:
 	const unsigned m_xDim;

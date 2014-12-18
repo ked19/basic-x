@@ -29,6 +29,7 @@ public:
 
 	void CopyFrom(const Mtx2D &mtxFrom);
 	void CopyFrom(float *pData);
+	void CopyFrom(unsigned char *pData);
 	void CopyTo(DATA *pData) const;
 	void CopyTo(float *pData) const;
 	void CopyTo(unsigned char* pData) const;

@@ -72,6 +72,7 @@ template <class T>
 class Vect4D
 {
 public:
+	Vect4D();
 	Vect4D(T r, T g, T b, T a);
 	Vect4D(const Vect4D<T> &vFrom);
 	~Vect4D();
@@ -81,6 +82,7 @@ public:
 		m_g = v.m_g;
 		m_b = v.m_b;
 		m_a = v.m_a;
+		return *this;
 	}
 
 	union{T m_r;	T m_x;};
@@ -128,6 +130,10 @@ Vect3D<T>::Vect3D() //restrict(cpu, amp)
 template<class T>
 Vect3D<T>::~Vect3D() //restrict(cpu, amp)
 {}
+
+template<class T>
+Vect4D<T>::Vect4D()
+	:m_r(0), m_g(0), m_b(0), m_a(0) {}
 
 template<class T>
 Vect4D<T>::Vect4D(T r, T g, T b, T a)
