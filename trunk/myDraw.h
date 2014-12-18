@@ -9,50 +9,50 @@
 
 using namespace std;
 
-class Line
+class LineDraw
 {
 public:
-	Line();
-	~Line();
+	LineDraw();
+	~LineDraw();
 
 	void Gen(Layer &lyrD, Vect2D<DATA> &pFrom, Vect2D<DATA> &pTo, 
 						  Vect4D<DATA> &cFrom, Vect4D<DATA> &cTo, bool bDebug = false);
 };
 
-class Rectangle
+class RectangleDraw
 {
 public:
-	Rectangle();
-	~Rectangle();
+	RectangleDraw();
+	~RectangleDraw();
 
 	void Gen(Layer &lyrD, Vect2D<DATA> &p0, Vect2D<DATA> &p1, Vect4D<DATA> &c, bool bFull = false);
 };
 
-class Arrow
+class ArrowDraw
 {
 public:
-	Arrow();
-	~Arrow();
+	ArrowDraw();
+	~ArrowDraw();
 
 	void Gen(Layer &lyrD, Vect2D<DATA> &pFrom, Vect2D<DATA> &pTo, 
 			 Vect4D<DATA> &cA, DATA aScl = 0.7F, DATA aAng = 30.F, bool bDebug = false);
 };
 
-class Point
+class PointDraw
 {
 public:
-	Point();
-	~Point();
+	PointDraw();
+	~PointDraw();
 
 	void Gen(Layer &lyrD, Vect2D<DATA> &pLoc, DATA r, Vect4D<DATA> &cA, bool bDebug = false);
 
 };
 
-class Blend
+class BlendDraw
 {
 public:
-	Blend();
-	~Blend();
+	BlendDraw();
+	~BlendDraw();
 
 	void Gen(Layer &lyrDraw, const Mtx &mtxIn);
 };
@@ -60,11 +60,11 @@ public:
 class MyDraw
 {
 public:
-	Line				line;
-	Rectangle 			rect;
-	Arrow 				arrow;
-	Point 				point;
-	Blend 				blend;
+	LineDraw				line;
+	RectangleDraw 			rect;
+	ArrowDraw 				arrow;
+	PointDraw 				point;
+	BlendDraw 				blend;
 
 private:
 };

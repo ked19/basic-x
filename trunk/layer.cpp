@@ -31,10 +31,16 @@ Layer2D::Layer2D(const Layer2D &layOrg)
 Layer2D::Layer2D(const Layer2D &layOrg, unsigned xOffset, unsigned yOffset, unsigned cOffset, unsigned xDim, unsigned yDim, unsigned cDim)
 	:m_xDim(xDim), m_yDim(yDim), m_cDim(cDim)
 {
+	/*
 	m_vpMtx.clear();
 	for(unsigned c=0; c<m_cDim; c++)
 	{
 		m_vpMtx.push_back(new Mtx2D(*layOrg.m_vpMtx[c+cOffset], xOffset, yOffset, xDim, yDim));
+	}
+	*/
+	m_vpMtx.resize(m_cDim);
+	for (unsigned c = 0; c < m_cDim; c++) {
+		m_vpMtx[c] = new Mtx2D(*layOrg.m_vpMtx[c], xOffset, yOffset, xDim, yDim);
 	}
 }
 

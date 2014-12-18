@@ -11,6 +11,7 @@
 #include <iomanip>
 #include <cmath>
 #include <list>
+//#include <Eigen/Dense>
 
 using namespace std;
 
@@ -356,6 +357,8 @@ public:
 	void Gen(Mtx &mtx, unsigned levlNum, Mtx *pMSkip=0);
 	void Reval(Mtx &mtx, Mtx *pMSkip=0);
 
+	void Gen(unsigned char *pIn, unsigned size, unsigned char *pSkip = 0);
+
 private:
 	unsigned m_levelNum;
 	unsigned m_memSize;
@@ -545,7 +548,8 @@ public:
 	LeastSquare();
 	~LeastSquare();
 
-	int Gen(Mtx &mtxX, Mtx &mtxA, Mtx &mtxB, Mtx &mtxAA, Mtx &mtxAB, unsigned aIdx[], bool bDebuf = false);
+	int Gen(Mtx &mtxX, Mtx &mtxA, Mtx &mtxB, Mtx &mtxAA, Mtx &mtxAB, unsigned aIdx[], bool bDebug = false);
+	//void Gen(Mtx &mtxX, Mtx &mtxA, Mtx &mtxB);
 };
 
 class RegionLabel

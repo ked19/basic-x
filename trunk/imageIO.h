@@ -19,6 +19,7 @@ public:
 
 	MyImg* Read(const string &fName) const;
 	void Read(MyImg &img, const string &fName) const;
+	void Read(MyImg **ppImg, MyImg &imgIn, const string &fName) const;
 
 	void Write(const string &fName, MyImg &img) const;	
 

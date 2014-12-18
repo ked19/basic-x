@@ -1676,6 +1676,64 @@ void HisEqual::Gen(Mtx &mtx, unsigned levelNum, Mtx *pMSkip)
 	Reval(mtx , pMSkip);
 }
 
+void HisEqual::Gen(unsigned char *pIn, unsigned size, unsigned char *pSkip)
+{
+	unsigned levelNum = 256;
+	if(levelNum != m_levelNum) {
+		if(m_memSize < levelNum) {
+			delete []m_pCount;
+			m_memSize = levelNum;
+			m_pCount = new unsigned[m_memSize];
+		} else {}
+		m_levelNum = levelNum;
+	} else {}
+	for(unsigned i = 0; i < m_levelNum; i++) {
+		m_pCount[i] = 0;
+	}
+
+	for (unsigned s = 0; s < size; s++) {
+		if (pSkip && pSkip[s] == 0) {
+			continue;
+		} else {}
+
+		m_pCount[pIn[s]]++;
+	}
+
+	for(unsigned i = 1; i < m_levelNum; i++) {
+		m_pCount[i] += m_pCount[i - 1];
+	}
+
+	//*******************************************
+	// reval
+	//*******************************************
+
+	unsigned sNum = m_pCount[m_levelNum - 1];
+
+	unsigned cMin = 0;
+	for(unsigned i=0; i<m_levelNum; i++) {
+		if(m_pCount[i] > 0) {
+			cMin = m_pCount[i];
+			break;
+		} else {}
+	}
+
+	unsigned inSize = sNum; 
+	unsigned d_count = inSize - cMin;
+	for(unsigned s = 0; s < size; s++) {
+		if(pSkip && pSkip[s] == 0) {
+			continue;
+		} else {}
+
+		unsigned level = pIn[s];
+
+		if(m_pCount[level] == 0) {
+			pIn[s] = 0;
+		} else {
+			pIn[s] = (m_levelNum - 1) * (m_pCount[level] - cMin) / d_count;
+		}
+	}
+}
+
 //*************************************************************************************************
 //
 //*************************************************************************************************
@@ -2123,6 +2181,7 @@ Otsu::~Otsu()
 DATA Otsu::Gen(Mtx &mtx, DATA &thrd, unsigned lev, DATA valMax, DATA valMin)
 {
 	MyAssert(0);
+	return 0;
 	/*
 	Vect2D<unsigned> dimIn = mtx.GetDim();
 	//unsigned size = dimIn.m_x * dimIn.m_y;
@@ -2871,6 +2930,38 @@ LeastSquare::LeastSquare()
 LeastSquare::~LeastSquare()
 {}
 
+/*
+void LeastSquare::Gen(Mtx &mtxX, Mtx &mtxA, Mtx &mtxB)
+{
+	Vect2D<unsigned> dimA = mtxA.GetDim();
+	Vect2D<unsigned> dimB = mtxB.GetDim();
+	Vect2D<unsigned> dimX = mtxX.GetDim();
+
+	static Eigen::MatrixXf A(dimA.m_y, dimA.m_x);
+	for (unsigned y = 0; y < dimA.m_y;  y++) {
+		for (unsigned x = 0; x < dimA.m_x; x++) {
+			A(y, x) = (int)mtxA.CellVal(x, y);
+		}
+	}
+	//cout << A << endl;
+	//getchar();
+
+	static Eigen::VectorXf B(dimB.m_y);
+	for (unsigned y = 0; y < dimB.m_y;  y++) {
+		B(y) = (float)mtxB.CellVal(0, y);
+	}
+	//cout << B << endl;
+	//getchar();
+
+	static Eigen::VectorXf X; 
+	//X = A.jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(B);
+	X = (A.transpose() * A).ldlt().solve(A.transpose() * B);
+	for (unsigned y = 0; y < dimX.m_y;  y++) {
+		mtxX.CellRef(0, y) = X(y);
+	}
+}
+*/
+
 int LeastSquare::Gen(Mtx &mtxX, Mtx &mtxA, Mtx &mtxB, Mtx &mtxAA, Mtx &mtxAB, unsigned aIdx[], bool bDebug)
 {
 	Vect2D<unsigned> dimA = mtxA.GetDim();
@@ -2909,6 +3000,13 @@ int LeastSquare::Gen(Mtx &mtxX, Mtx &mtxA, Mtx &mtxB, Mtx &mtxAA, Mtx &mtxAB, un
 
 	// replace the inversion
 	int errNo = mtxOp.solv_GElim.Gen(mtxX, mtxAA, mtxAB, aIdx);
+	for (unsigned i = 0; i < dimX.m_y; i++) {
+		mtxAA.CellRef(i, 0) = mtxX.CellVal(0, aIdx[i]);
+	}
+	for (unsigned i = 0; i < dimX.m_y; i++) {
+		mtxX.CellRef(0, i) = mtxAA.CellVal(i, 0);
+	}
+
 	/*
 	Mtx mtxAAt(dimAA.m_x, dimAA.m_y);
 	Mtx mtxT0(dimAA.m_x, dimAA.m_y);
@@ -3010,10 +3108,10 @@ void RegionLabel::Gen(Mtx &mtxLab, Mtx &mtxIn, vector<unsigned> &idx)
 		}
 	}
 
-	for (unsigned i = 0; i < idx.size(); i++) {
-		cout << i << ":" << idx[i] << " ";
-	}
-	cout << endl;
+	//for (unsigned i = 0; i < idx.size(); i++) {
+	//	cout << i << ":" << idx[i] << " ";
+	//}
+	//cout << endl;
 }
 
 //*************************************************************************************************

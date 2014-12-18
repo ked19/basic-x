@@ -69,6 +69,44 @@ void GetUint16(MyImg &img, FIBITMAP &bmp, RGBQUAD *palette, unsigned x, unsigned
 	img.CellRef(x, y, 0) = (float)pBits[x];
 }
 
+void ImgIO::Read(MyImg **ppImg, MyImg &imgIn, const string &fName) const
+{
+	FIBITMAP *pBmp = Load2Bmp(fName);
+
+	unsigned xDim = FreeImage_GetWidth(pBmp);
+	unsigned yDim = FreeImage_GetHeight(pBmp);
+
+	FREE_IMAGE_TYPE dataType = FreeImage_GetImageType(pBmp);
+	assert(dataType==FIT_BITMAP // 1, 4, 8, 16, 32 bits
+		|| dataType==FIT_UINT16);
+
+	FREE_IMAGE_COLOR_TYPE colorType = FreeImage_GetColorType(pBmp);
+	unsigned cDim;
+	FreeImage_Unload(pBmp);	
+
+	if(dataType == FIT_BITMAP) {
+		if(colorType == FIC_MINISBLACK)			{cDim = 1;}
+		else if(colorType == FIC_MINISWHITE)	{cDim = 1;}
+		else if(colorType == FIC_PALETTE)		{cDim = 3;}
+		else if(colorType == FIC_RGB)			{cDim = 3;}
+		else if(colorType == FIC_RGBALPHA)		{cDim = 4;}
+		else if(colorType == FIC_CMYK)			assert(0);
+		else									assert(0);
+	} else if(dataType == FIT_UINT16) {
+		if(colorType == FIC_MINISBLACK)			{cDim = 1;}
+		else									assert(0);
+	} else {
+		assert(0);
+	}
+	
+	Vect3D<unsigned> dimImg = imgIn.GetDim();
+	MyAssert(dimImg.m_x >= xDim &&
+			 dimImg.m_y >= yDim &&
+			 dimImg.m_z == cDim);
+	*ppImg = new MyImg(imgIn, 0, 0, xDim, yDim);
+	Read(**ppImg, fName);
+}
+
 void ImgIO::Read(MyImg &img, const string &fName) const
 {
 	cout << "read image file: " << fName << endl;
