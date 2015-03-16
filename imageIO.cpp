@@ -126,7 +126,7 @@ void ImgIO::Read(MyImg &img, const string &fName) const
 
 	FREE_IMAGE_COLOR_TYPE colorType = FreeImage_GetColorType(pBmp);
 	unsigned cDim;
-	void (*GetValue)(MyImg&, FIBITMAP&, RGBQUAD*, unsigned, unsigned);
+	void (*GetValue)(MyImg&, FIBITMAP&, RGBQUAD*, unsigned, unsigned) = 0;
 	if(dataType == FIT_BITMAP)
 	{
 		if(colorType == FIC_MINISBLACK)			{cDim = 1;		GetValue = GetPalette1V;}
@@ -335,7 +335,7 @@ void ImgIO::Write(const std::string &fName, MyImg &img) const
 		MyAssert(0);
 	}
 
-	void (*SetValue)(const MyImg&, FIBITMAP&, RGBQUAD*, unsigned, unsigned);
+	void (*SetValue)(const MyImg&, FIBITMAP&, RGBQUAD*, unsigned, unsigned) = 0;
 	if (dataFormat == FIF_BMP) {
 		if (dim.m_z == 1)		SetValue = SetNonpalette1V;
 		else if (dim.m_z == 2)	SetValue = SetNonpalette2V;
